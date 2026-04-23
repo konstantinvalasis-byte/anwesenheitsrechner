@@ -1,0 +1,97 @@
+-- ============================================================
+-- Anwesenheitsrechner – Supabase SQL Schema
+-- Ausführen im Supabase SQL Editor (einmalig)
+-- ============================================================
+
+-- 1. Profiles table (ergänzt auth.users)
+CREATE TABLE IF NOT EXISTS public.profiles (
+  id        UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+  name      TEXT NOT NULL,
+  is_admin  BOOLEAN DEFAULT FALSE,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 2. Attendance table
+CREATE TABLE IF NOT EXISTS public.attendance (
+  id         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  member_id  UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+  date       DATE NOT NULL,
+  type       TEXT NOT NULL CHECK (type IN ('OFFICE','REMOTE','VACATION','HOLIDAY','FLEX','SICK')),
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE (member_id, date)
+);
+
+-- 3. Enable Row-Level Security
+ALTER TABLE public.profiles  ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.attendance ENABLE ROW LEVEL SECURITY;
+
+-- 4. Helper function to check admin (SECURITY DEFINER avoids RLS recursion)
+CREATE OR REPLACE FUNCTION public.is_admin()
+RETURNS BOOLEAN LANGUAGE sql SECURITY DEFINER SET search_path = public AS $$
+  SELECT COALESCE((SELECT is_admin FROM profiles WHERE id = auth.uid()), FALSE);
+$$;
+
+-- 5. Profiles policies
+CREATE POLICY "profiles_own_select"  ON public.profiles FOR SELECT    TO authenticated USING (id = auth.uid() OR public.is_admin());
+CREATE POLICY "profiles_own_insert"  ON public.profiles FOR INSERT    TO authenticated WITH CHECK (id = auth.uid());
+CREATE POLICY "profiles_own_update"  ON public.profiles FOR UPDATE    TO authenticated USING (id = auth.uid() OR public.is_admin());
+
+-- 6. Attendance policies
+CREATE POLICY "attendance_own_all"   ON public.attendance FOR ALL     TO authenticated USING (member_id = auth.uid());
+CREATE POLICY "attendance_admin_sel" ON public.attendance FOR SELECT  TO authenticated USING (public.is_admin());
+
+-- 7. Team stats function (aggregated, bypasses RLS – safe because no PII)
+CREATE OR REPLACE FUNCTION public.get_team_stats(p_year INT, p_month INT)
+RETURNS TABLE(type TEXT, total_days BIGINT, member_count BIGINT)
+LANGUAGE sql SECURITY DEFINER SET search_path = public AS $$
+  SELECT type, COUNT(*) AS total_days, COUNT(DISTINCT member_id) AS member_count
+  FROM attendance
+  WHERE EXTRACT(YEAR FROM date) = p_year AND EXTRACT(MONTH FROM date) = p_month
+  GROUP BY type;
+$$;
+
+-- 8. Per-member anonymous percentages (no names, just percentages sorted desc)
+CREATE OR REPLACE FUNCTION public.get_team_member_percentages(p_year INT, p_month INT)
+RETURNS TABLE(percentage INT)
+LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+DECLARE
+  v_working_days INT;
+BEGIN
+  -- Count non-weekend working days in the month
+  SELECT COUNT(*) INTO v_working_days
+  FROM generate_series(
+    make_date(p_year, p_month, 1),
+    make_date(p_year, p_month, 1) + INTERVAL '1 month' - INTERVAL '1 day',
+    INTERVAL '1 day'
+  ) AS d
+  WHERE EXTRACT(ISODOW FROM d) < 6;
+
+  RETURN QUERY
+  WITH per_member AS (
+    SELECT
+      member_id,
+      COUNT(*) FILTER (WHERE a.type IN ('VACATION','HOLIDAY','FLEX','SICK')) AS absence_days,
+      COUNT(*) FILTER (WHERE a.type = 'OFFICE') AS office_days
+    FROM attendance a
+    WHERE EXTRACT(YEAR FROM a.date) = p_year AND EXTRACT(MONTH FROM a.date) = p_month
+    GROUP BY member_id
+  )
+  SELECT
+    CASE WHEN (v_working_days - LEAST(absence_days, v_working_days)) = 0 THEN 0
+         ELSE ROUND(office_days::numeric / (v_working_days - LEAST(absence_days, v_working_days)) * 100)::INT
+    END AS percentage
+  FROM per_member
+  ORDER BY percentage DESC;
+END;
+$$;
+
+-- 9. Grant RPC access
+GRANT EXECUTE ON FUNCTION public.get_team_stats TO authenticated;
+GRANT EXECUTE ON FUNCTION public.get_team_member_percentages TO authenticated;
+GRANT EXECUTE ON FUNCTION public.is_admin TO authenticated;
+
+-- ============================================================
+-- OPTIONAL: Ersten Admin manuell setzen
+-- Ersetze <USER-UUID> mit der UUID aus Authentication > Users
+-- ============================================================
+-- UPDATE public.profiles SET is_admin = TRUE WHERE id = '<USER-UUID>';

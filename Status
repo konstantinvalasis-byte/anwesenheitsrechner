@@ -1,0 +1,30 @@
+Hier ist eine Zusammenfassung unseres aktuellen Stands beim Projekt "Anwesenheitsrechner" und der Überblick über die nächsten Schritte:
+
+📍 Wo wir gerade stehen (Aktueller Stand)
+Wir haben das Grundgerüst für eine moderne, sichere und anonyme Web-Applikation zur Erfassung der Anwesenheit deines 12-köpfigen Teams geschaffen. Die App ist mit Vite (Vanilla JS) aufgebaut und nutzt Supabase als Backend.
+
+Folgende Bausteine sind bereits fertig:
+
+Frontend-Struktur & Design: Das Projekt ist in sinnvolle Module unterteilt (src/pages, src/components, main.js, style.css).
+Komplexe Berechnungslogik (calculator.js & holidays.js): Die Logik zur Berechnung der 50%-Büroquote steht. Sie erkennt Wochenenden, berücksichtigt Abwesenheiten (Urlaub, Krankheit, Gleittage) und berechnet automatisch die gesetzlichen Feiertage für Baden-Württemberg (inklusive beweglicher Feiertage wie Ostern, Pfingsten, etc.). Die Quote berechnet sich fair auf Basis der Netto-Arbeitstage.
+Datenbank-Architektur (supabase-schema.sql): Das komplette SQL-Schema für Supabase ist vorgeschrieben. Es umfasst:
+Tabellen für Profile und Anwesenheitseinträge.
+Row-Level-Security (RLS): Stellt sicher, dass jeder nur seine eigenen Daten bearbeiten kann und die Team-Statistik komplett anonym bleibt (Datenschutz).
+Eigene SQL-Funktionen für die aggregierte Admin-Ansicht und Team-Statistiken.
+Backend-Anbindung (supabase.js): Der Client zur Kommunikation mit der Supabase-Datenbank ist initialisiert.
+Setup-Anleitung (SETUP.md): Eine Schritt-für-Schritt-Anleitung für die Inbetriebnahme liegt bereits bei.
+🚀 Was die nächsten Schritte sind
+Um die App lauffähig zu machen und für dein Team bereitzustellen, müssen wir nun die Verbindung zum Backend herstellen und testen. Das sind die konkreten Aufgaben:
+
+Supabase-Projekt anlegen & konfigurieren:
+Ein Projekt auf supabase.com erstellen.
+Den fertigen Code aus der supabase-schema.sql im dortigen SQL-Editor ausführen, um die Tabellen und Sicherheitsregeln (RLS) zu erstellen.
+API-Schlüssel eintragen:
+Die Verbindungsdaten (URL und Anon-Key) deines neuen Supabase-Projekts in die Datei src/supabase.js kopieren, damit unsere App mit deiner Datenbank sprechen kann.
+Lokaler Testlauf:
+Die App lokal starten (npm run dev).
+Einen Test-Account anlegen und prüfen, ob Login, Kalender-Einträge und die Quoten-Berechnung reibungslos funktionieren.
+Admin-Rechte vergeben:
+Deinem eigenen Account in der Supabase-Datenbank (Tabelle profiles) das Häkchen bei is_admin = TRUE setzen, damit du das Admin-Dashboard siehst.
+Deployment (Veröffentlichung):
+Die App bauen (npm run build) und z. B. kostenfrei bei Netlify hochladen. Danach kannst du den Link an dein Team verteilen.
