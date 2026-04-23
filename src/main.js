@@ -8,6 +8,7 @@ import { renderAdmin } from './pages/admin.js';
 
 let currentUser = null;
 let currentProfile = null;
+let routerRunning = false;
 
 async function getProfile(userId) {
   const { data } = await supabase.from('profiles').select('*').eq('id', userId).single();
@@ -15,44 +16,63 @@ async function getProfile(userId) {
 }
 
 async function router() {
-  const hash = window.location.hash.replace('#/', '') || 'dashboard';
+  if (routerRunning) return;
+  routerRunning = true;
+  try {
+    const hash = window.location.hash.replace('#/', '') || 'dashboard';
 
-  if (!currentUser) {
-    renderLogin();
-    return;
-  }
-
-  if (!currentProfile) {
-    currentProfile = await getProfile(currentUser.id);
-    if (!currentProfile) {
-      // Profile might not exist yet (email not confirmed / race condition)
+    if (!currentUser) {
       renderLogin();
       return;
     }
+
+    if (!currentProfile) {
+      currentProfile = await getProfile(currentUser.id);
+      if (!currentProfile) {
+        renderLogin();
+        return;
+      }
+    }
+
+    const routes = {
+      dashboard: () => renderDashboard(currentProfile),
+      calendar:  () => renderCalendar(currentProfile),
+      team:      () => renderTeam(currentProfile),
+      admin:     () => renderAdmin(currentProfile),
+    };
+
+    const render = routes[hash] || routes['dashboard'];
+    await render();
+  } catch (err) {
+    console.error('Router-Fehler:', err);
+    document.getElementById('app').innerHTML = `
+      <div style="display:flex;align-items:center;justify-content:center;height:100vh;flex-direction:column;gap:16px">
+        <p style="color:var(--text-muted)">Seite konnte nicht geladen werden. Bitte neu laden.</p>
+        <button onclick="location.reload()" style="padding:8px 20px;border-radius:8px;border:none;background:var(--primary);color:#fff;cursor:pointer">Neu laden</button>
+      </div>`;
+  } finally {
+    routerRunning = false;
   }
-
-  const routes = {
-    dashboard: () => renderDashboard(currentProfile),
-    calendar:  () => renderCalendar(currentProfile),
-    team:      () => renderTeam(currentProfile),
-    admin:     () => renderAdmin(currentProfile),
-  };
-
-  const render = routes[hash] || routes['dashboard'];
-  await render();
 }
 
-// Auth state change listener
-supabase.auth.onAuthStateChange(async (_event, session) => {
+supabase.auth.onAuthStateChange(async (event, session) => {
+  // INITIAL_SESSION wird unten via getSession() behandelt — kein doppelter Aufruf
+  if (event === 'INITIAL_SESSION') return;
+
+  // Token-Erneuerung transparent im Hintergrund — kein Re-Render nötig
+  if (event === 'TOKEN_REFRESHED') {
+    currentUser = session?.user ?? null;
+    return;
+  }
+
   currentUser    = session?.user ?? null;
-  currentProfile = null; // reset on auth change
+  currentProfile = null;
   await router();
 });
 
-// Hash-based routing
 window.addEventListener('hashchange', router);
 
-// Initial check
+// Einmaliger Start-Check
 const { data: { session } } = await supabase.auth.getSession();
 currentUser = session?.user ?? null;
 await router();
