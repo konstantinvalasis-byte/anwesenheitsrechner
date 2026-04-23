@@ -97,23 +97,17 @@ window.doRegister = async function() {
 
   btn.textContent = 'Wird erstellt…'; btn.disabled = true;
 
-  const { data, error } = await supabase.auth.signUp({ email, password: pass });
+  const { error } = await supabase.auth.signUp({
+    email,
+    password: pass,
+    options: { data: { name } },
+  });
   if (error) {
     errEl.textContent = 'Fehler: ' + error.message;
     btn.textContent = 'Konto erstellen →'; btn.disabled = false;
     return;
   }
 
-  if (data.user) {
-    // Create profile
-    const { error: profileError } = await supabase.from('profiles').insert({
-      id: data.user.id,
-      name,
-      is_admin: false,
-    });
-    if (profileError) console.warn('Profile create error:', profileError);
-  }
-
-  showToast('✅ Konto erstellt! Bitte prüfe deine E-Mails zur Bestätigung.', 'success');
+  showToast('✅ Konto erstellt! Du kannst dich jetzt anmelden.', 'success');
   setTimeout(() => { currentTab = 'login'; renderLoginForm(); }, 1500);
 };
