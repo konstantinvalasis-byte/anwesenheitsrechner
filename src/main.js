@@ -68,8 +68,12 @@ supabase.auth.onAuthStateChange(async (event, session) => {
     return;
   }
 
-  // SIGNED_IN vor INITIAL_SESSION = automatischer Token-Refresh beim Seitenreload — ignorieren
-  if (event === 'SIGNED_IN' && !authReady) return;
+  // SIGNED_IN = echter Login ODER automatischer Token-Refresh (_recoverAndRefresh)
+  // Token-Refresh erkennen: noch vor INITIAL_SESSION (!authReady) ODER Session war bereits aktiv (currentUser gesetzt)
+  if (event === 'SIGNED_IN' && (!authReady || currentUser)) {
+    currentUser = session?.user ?? null;
+    return;
+  }
 
   authReady = true;
   currentUser    = session?.user ?? null;
