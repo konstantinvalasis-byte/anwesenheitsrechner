@@ -28,7 +28,8 @@
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-html { scroll-behavior: smooth; }
+html { scroll-behavior: smooth; overflow-x: hidden; }
+body { overflow-x: hidden; }
 
 body {
   font-family: 'Inter', sans-serif;
@@ -180,8 +181,9 @@ body {
   .stat-label { font-size: 12px; }
 
   /* Kalender-Zellen auf kleinen Screens */
-  .cal-day { min-height: 44px; }
+  .cal-day { min-height: 44px; aspect-ratio: auto; }
   .cal-day-emoji { font-size: 12px; }
+  .layout-calendar-sidebar > .card { padding: 12px !important; }
 
   /* Toast unten, über Bottom-Nav */
   .toast-container { left: 16px; right: 16px; bottom: 80px; }
@@ -302,7 +304,7 @@ body {
 
 /* ── Day Type Picker (Modal) ── */
 .modal-overlay {
-  position: fixed; inset: 0; z-index: 200;
+  position: fixed; inset: 0; z-index: 150;
   background: rgba(0,0,0,0.7); backdrop-filter: blur(8px);
   display: flex; align-items: center; justify-content: center;
   padding: 24px;
