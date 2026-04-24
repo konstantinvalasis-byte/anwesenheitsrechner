@@ -168,8 +168,15 @@ body {
   .progress-ring-container svg { width: 180px !important; height: 180px !important; }
   .ring-percent { font-size: 34px !important; }
 
-  /* Stat cards */
-  .stat-value { font-size: 28px; }
+  /* Stat cards — 2-spaltig auf Mobile, kompakt */
+  .layout-dashboard .grid-2 {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+  .stat-card { padding: 12px 14px; gap: 4px; }
+  .stat-icon { font-size: 18px; }
+  .stat-value { font-size: 22px; }
+  .stat-label { font-size: 12px; }
 
   /* Kalender-Zellen auf kleinen Screens */
   .cal-day { min-height: 44px; }
