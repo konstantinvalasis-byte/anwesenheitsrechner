@@ -16,12 +16,10 @@ let renderSeq = 0;
 let authReady = false;
 
 async function getProfile(userId) {
-  console.log('[Router] getProfile() Start, userId:', userId);
   const result = await Promise.race([
     supabase.from('profiles').select('*').eq('id', userId).single(),
     new Promise((_, reject) => setTimeout(() => reject(new Error('getProfile Timeout')), 8000)),
   ]);
-  console.log('[Router] getProfile() Ergebnis:', result?.data, result?.error);
   return result?.data ?? null;
 }
 
@@ -65,19 +63,18 @@ async function router() {
 }
 
 supabase.auth.onAuthStateChange(async (event, session) => {
-  console.log('[Auth]', event, session?.user?.email ?? 'kein Nutzer');
-
   if (event === 'TOKEN_REFRESHED') {
     currentUser = session?.user ?? null;
     return;
   }
 
+  // SIGNED_IN vor INITIAL_SESSION = automatischer Token-Refresh beim Seitenreload — ignorieren
+  if (event === 'SIGNED_IN' && !authReady) return;
+
   authReady = true;
   currentUser    = session?.user ?? null;
   currentProfile = null;
-  console.log('[Auth] → router() wird aufgerufen');
   await router();
-  console.log('[Auth] → router() abgeschlossen');
 });
 
 window.addEventListener('hashchange', router);
