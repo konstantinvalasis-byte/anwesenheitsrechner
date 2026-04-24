@@ -136,6 +136,7 @@ body {
   display: none;
 }
 
+
 @media (max-width: 768px) {
   .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
   .layout-dashboard, .layout-calendar-sidebar { grid-template-columns: 1fr; }
@@ -146,8 +147,8 @@ body {
   .user-badge span { display: none; }
   .btn-ghost.btn-sm { display: none; }
 
-  /* Page */
-  .page { padding-bottom: 72px; }
+  /* Page — genug Abstand für Bottom-Nav + Safe Area */
+  .page { padding-bottom: calc(72px + env(safe-area-inset-bottom, 0px)); }
   .container { padding: 0 16px; }
 
   /* Page header stackt vertikal */
@@ -189,21 +190,36 @@ body {
   /* Bottom Nav */
   .bottom-nav {
     display: flex;
-    position: fixed; bottom: 0; left: 0; right: 0; z-index: 100;
-    background: rgba(10,15,30,0.95);
+    position: fixed; bottom: 0; left: 0; right: 0; z-index: 200;
+    background: rgba(10,15,30,0.97);
     border-top: 1px solid var(--border);
     backdrop-filter: blur(20px);
-    padding: 6px 0 env(safe-area-inset-bottom, 6px);
+    -webkit-backdrop-filter: blur(20px);
+    padding: 6px 0 max(env(safe-area-inset-bottom), 6px);
+    min-height: 56px;
   }
   .bottom-nav-btn {
-    flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px;
-    padding: 6px 4px; background: none; border: none;
-    color: var(--text-muted); font-size: 11px; font-weight: 500;
+    flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+    padding: 4px 2px; background: none; border: none;
+    color: var(--text-muted); font-size: 10px; font-weight: 500;
     cursor: pointer; font-family: inherit; transition: var(--transition);
+    min-width: 0; overflow: hidden; touch-action: manipulation;
   }
-  .bottom-nav-btn .nav-icon { font-size: 20px; line-height: 1; }
+  .bottom-nav-btn .nav-icon { font-size: 18px; line-height: 1; flex-shrink: 0; }
+  .bottom-nav-btn .nav-label {
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    max-width: 100%; text-align: center; display: block;
+  }
   .bottom-nav-btn.active { color: var(--accent-light); }
   .bottom-nav-btn:hover { color: var(--text-primary); }
+}
+
+/* Sehr schmale Screens: nur Icons, kein Text */
+@media (max-width: 360px) {
+  .bottom-nav-btn .nav-label { display: none; }
+  .bottom-nav-btn .nav-icon { font-size: 22px; }
+  .bottom-nav { min-height: 48px; }
+  .page { padding-bottom: calc(56px + env(safe-area-inset-bottom, 0px)); }
 }
 
 /* ── Stat cards ── */

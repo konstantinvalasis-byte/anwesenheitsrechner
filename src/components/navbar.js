@@ -38,19 +38,19 @@ export function renderNavbar(profile, activePage) {
   }
   bottomNav.innerHTML = `
     <button class="bottom-nav-btn ${activePage==='dashboard'?'active':''}" onclick="navigate('dashboard')">
-      <span class="nav-icon">🏠</span>Dashboard
+      <span class="nav-icon">🏠</span><span class="nav-label">Dashboard</span>
     </button>
     <button class="bottom-nav-btn ${activePage==='calendar'?'active':''}" onclick="navigate('calendar')">
-      <span class="nav-icon">📅</span>Kalender
+      <span class="nav-icon">📅</span><span class="nav-label">Kalender</span>
     </button>
     <button class="bottom-nav-btn ${activePage==='team'?'active':''}" onclick="navigate('team')">
-      <span class="nav-icon">👥</span>Team
+      <span class="nav-icon">👥</span><span class="nav-label">Team</span>
     </button>
     ${isAdmin ? `<button class="bottom-nav-btn ${activePage==='admin'?'active':''}" onclick="navigate('admin')">
-      <span class="nav-icon">⚙️</span>Admin
+      <span class="nav-icon">⚙️</span><span class="nav-label">Admin</span>
     </button>` : ''}
     <button class="bottom-nav-btn" onclick="doLogout()">
-      <span class="nav-icon">🚪</span>Abmelden
+      <span class="nav-icon">🚪</span><span class="nav-label">Abmelden</span>
     </button>
   `;
 }
