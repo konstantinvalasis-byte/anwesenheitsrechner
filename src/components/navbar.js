@@ -27,6 +27,32 @@ export function renderNavbar(profile, activePage) {
       <button class="btn btn-ghost btn-sm" id="btn-logout" onclick="doLogout()">Abmelden</button>
     </div>
   `;
+
+  // Bottom-Nav für Mobile
+  let bottomNav = document.getElementById('bottom-nav');
+  if (!bottomNav) {
+    bottomNav = document.createElement('nav');
+    bottomNav.id = 'bottom-nav';
+    bottomNav.className = 'bottom-nav';
+    document.body.appendChild(bottomNav);
+  }
+  bottomNav.innerHTML = `
+    <button class="bottom-nav-btn ${activePage==='dashboard'?'active':''}" onclick="navigate('dashboard')">
+      <span class="nav-icon">🏠</span>Dashboard
+    </button>
+    <button class="bottom-nav-btn ${activePage==='calendar'?'active':''}" onclick="navigate('calendar')">
+      <span class="nav-icon">📅</span>Kalender
+    </button>
+    <button class="bottom-nav-btn ${activePage==='team'?'active':''}" onclick="navigate('team')">
+      <span class="nav-icon">👥</span>Team
+    </button>
+    ${isAdmin ? `<button class="bottom-nav-btn ${activePage==='admin'?'active':''}" onclick="navigate('admin')">
+      <span class="nav-icon">⚙️</span>Admin
+    </button>` : ''}
+    <button class="bottom-nav-btn" onclick="doLogout()">
+      <span class="nav-icon">🚪</span>Abmelden
+    </button>
+  `;
 }
 
 window.navigate = function(page) {

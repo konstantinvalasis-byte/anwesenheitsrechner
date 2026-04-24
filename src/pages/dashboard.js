@@ -2,13 +2,14 @@ import { supabase } from '../supabase.js';
 import { renderNavbar } from '../components/navbar.js';
 import { calculateMonthStats, DAY_TYPES } from '../calculator.js';
 import { getBWHolidays } from '../holidays.js';
+import { getMonthState, setMonthState } from '../monthState.js';
 
 const MONTH_NAMES = ['Januar','Februar','März','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember'];
 
-let currentYear = new Date().getFullYear();
-let currentMonth = new Date().getMonth();
+let currentYear, currentMonth;
 
 export async function renderDashboard(profile) {
+  ({ year: currentYear, month: currentMonth } = getMonthState());
   document.getElementById('app').innerHTML = `
     <div id="navbar" class="navbar"></div>
     <div class="page fade-in">
@@ -35,10 +36,12 @@ export async function renderDashboard(profile) {
 
   document.getElementById('btn-prev-month').onclick = () => {
     currentMonth--; if (currentMonth < 0) { currentMonth = 11; currentYear--; }
+    setMonthState(currentYear, currentMonth);
     loadData(profile);
   };
   document.getElementById('btn-next-month').onclick = () => {
     currentMonth++; if (currentMonth > 11) { currentMonth = 0; currentYear++; }
+    setMonthState(currentYear, currentMonth);
     loadData(profile);
   };
 
@@ -80,7 +83,7 @@ function renderStats(stats, profile) {
     .slice(0, 4);
 
   document.getElementById('dashboard-content').innerHTML = `
-    <div class="grid grid-2 mb-24" style="grid-template-columns: 340px 1fr">
+    <div class="layout-dashboard mb-24">
       <!-- Progress Ring Card -->
       <div class="card" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;padding:36px">
         <div class="progress-ring-container" style="width:220px;height:220px">

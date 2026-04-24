@@ -3,18 +3,19 @@ import { renderNavbar } from '../components/navbar.js';
 import { showToast } from '../components/toast.js';
 import { getBWHolidays, isWeekend, dateKey } from '../holidays.js';
 import { DAY_TYPES } from '../calculator.js';
+import { getMonthState, setMonthState } from '../monthState.js';
 
 const MONTH_NAMES = ['Januar','Februar','März','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember'];
 const DAY_NAMES = ['Mo','Di','Mi','Do','Fr','Sa','So'];
 
-let currentYear = new Date().getFullYear();
-let currentMonth = new Date().getMonth();
+let currentYear, currentMonth;
 let entries = [];
 let profile = null;
 let holidayMap = new Map();
 
 export async function renderCalendar(prof) {
   profile = prof;
+  ({ year: currentYear, month: currentMonth } = getMonthState());
   document.getElementById('app').innerHTML = `
     <div id="navbar" class="navbar"></div>
     <div class="page fade-in">
@@ -30,7 +31,7 @@ export async function renderCalendar(prof) {
             <button class="month-btn" id="btn-next">›</button>
           </div>
         </div>
-        <div class="grid" style="grid-template-columns:1fr 280px;gap:20px;align-items:start">
+        <div class="layout-calendar-sidebar">
           <div class="card" style="padding:20px">
             <div id="calendar-grid"></div>
           </div>
@@ -59,8 +60,8 @@ export async function renderCalendar(prof) {
   `;
 
   renderNavbar(profile, 'calendar');
-  document.getElementById('btn-prev').onclick = () => { currentMonth--; if(currentMonth<0){currentMonth=11;currentYear--;} loadCalendar(); };
-  document.getElementById('btn-next').onclick = () => { currentMonth++; if(currentMonth>11){currentMonth=0;currentYear++;} loadCalendar(); };
+  document.getElementById('btn-prev').onclick = () => { currentMonth--; if(currentMonth<0){currentMonth=11;currentYear--;} setMonthState(currentYear, currentMonth); loadCalendar(); };
+  document.getElementById('btn-next').onclick = () => { currentMonth++; if(currentMonth>11){currentMonth=0;currentYear++;} setMonthState(currentYear, currentMonth); loadCalendar(); };
   await loadCalendar();
 }
 

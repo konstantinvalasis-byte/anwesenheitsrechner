@@ -117,9 +117,86 @@ body {
 .grid-2 { grid-template-columns: repeat(2, 1fr); }
 .grid-3 { grid-template-columns: repeat(3, 1fr); }
 .grid-4 { grid-template-columns: repeat(4, 1fr); }
+
+/* ── Custom Layout Grids ── */
+.layout-dashboard {
+  display: grid;
+  grid-template-columns: 340px 1fr;
+  gap: 20px;
+}
+.layout-calendar-sidebar {
+  display: grid;
+  grid-template-columns: 1fr 280px;
+  gap: 20px;
+  align-items: start;
+}
+
+/* ── Bottom Nav (Mobile) ── */
+.bottom-nav {
+  display: none;
+}
+
 @media (max-width: 768px) {
   .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+  .layout-dashboard, .layout-calendar-sidebar { grid-template-columns: 1fr; }
   .navbar-nav { display: none; }
+
+  /* Navbar kompakter */
+  .navbar { padding: 0 16px; }
+  .user-badge span { display: none; }
+  .btn-ghost.btn-sm { display: none; }
+
+  /* Page */
+  .page { padding-bottom: 72px; }
+  .container { padding: 0 16px; }
+
+  /* Page header stackt vertikal */
+  .page-header { padding: 20px 0 16px; }
+  .page-header.flex-between {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  .month-selector { width: 100%; }
+  .month-display { flex: 1; }
+
+  /* Page title kleiner */
+  .page-title { font-size: 22px; }
+
+  /* Progress Ring auf Mobile */
+  .progress-ring-container { width: 180px !important; height: 180px !important; }
+  .progress-ring-container svg { width: 180px !important; height: 180px !important; }
+  .ring-percent { font-size: 34px !important; }
+
+  /* Stat cards */
+  .stat-value { font-size: 28px; }
+
+  /* Kalender-Zellen auf kleinen Screens */
+  .cal-day { min-height: 44px; }
+  .cal-day-emoji { font-size: 12px; }
+
+  /* Toast unten, über Bottom-Nav */
+  .toast-container { left: 16px; right: 16px; bottom: 80px; }
+  .toast { min-width: unset; }
+
+  /* Bottom Nav */
+  .bottom-nav {
+    display: flex;
+    position: fixed; bottom: 0; left: 0; right: 0; z-index: 100;
+    background: rgba(10,15,30,0.95);
+    border-top: 1px solid var(--border);
+    backdrop-filter: blur(20px);
+    padding: 6px 0 env(safe-area-inset-bottom, 6px);
+  }
+  .bottom-nav-btn {
+    flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px;
+    padding: 6px 4px; background: none; border: none;
+    color: var(--text-muted); font-size: 11px; font-weight: 500;
+    cursor: pointer; font-family: inherit; transition: var(--transition);
+  }
+  .bottom-nav-btn .nav-icon { font-size: 20px; line-height: 1; }
+  .bottom-nav-btn.active { color: var(--accent-light); }
+  .bottom-nav-btn:hover { color: var(--text-primary); }
 }
 
 /* ── Stat cards ── */
