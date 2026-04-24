@@ -16,8 +16,13 @@ let renderSeq = 0;
 let authReady = false;
 
 async function getProfile(userId) {
-  const { data } = await supabase.from('profiles').select('*').eq('id', userId).single();
-  return data;
+  console.log('[Router] getProfile() Start, userId:', userId);
+  const result = await Promise.race([
+    supabase.from('profiles').select('*').eq('id', userId).single(),
+    new Promise((_, reject) => setTimeout(() => reject(new Error('getProfile Timeout')), 8000)),
+  ]);
+  console.log('[Router] getProfile() Ergebnis:', result?.data, result?.error);
+  return result?.data ?? null;
 }
 
 async function router() {
@@ -70,7 +75,9 @@ supabase.auth.onAuthStateChange(async (event, session) => {
   authReady = true;
   currentUser    = session?.user ?? null;
   currentProfile = null;
+  console.log('[Auth] → router() wird aufgerufen');
   await router();
+  console.log('[Auth] → router() abgeschlossen');
 });
 
 window.addEventListener('hashchange', router);
