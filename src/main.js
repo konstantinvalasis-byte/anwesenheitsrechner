@@ -8,7 +8,7 @@ import { renderAdmin } from './pages/admin.js';
 
 let currentUser = null;
 let currentProfile = null;
-let routerRunning = false;
+let renderSeq = 0;
 
 async function getProfile(userId) {
   const { data } = await supabase.from('profiles').select('*').eq('id', userId).single();
@@ -16,8 +16,8 @@ async function getProfile(userId) {
 }
 
 async function router() {
-  if (routerRunning) return;
-  routerRunning = true;
+  const seq = ++renderSeq;
+
   try {
     const hash = window.location.hash.replace('#/', '') || 'dashboard';
 
@@ -27,11 +27,10 @@ async function router() {
     }
 
     if (!currentProfile) {
-      currentProfile = await getProfile(currentUser.id);
-      if (!currentProfile) {
-        renderLogin();
-        return;
-      }
+      const profile = await getProfile(currentUser.id);
+      if (seq !== renderSeq) return; // neueres Auth-Event hat übernommen
+      if (!profile) { renderLogin(); return; }
+      currentProfile = profile;
     }
 
     const routes = {
@@ -44,21 +43,17 @@ async function router() {
     const render = routes[hash] || routes['dashboard'];
     await render();
   } catch (err) {
+    if (seq !== renderSeq) return;
     console.error('Router-Fehler:', err);
     document.getElementById('app').innerHTML = `
       <div style="display:flex;align-items:center;justify-content:center;height:100vh;flex-direction:column;gap:16px">
         <p style="color:var(--text-muted)">Seite konnte nicht geladen werden. Bitte neu laden.</p>
         <button onclick="location.reload()" style="padding:8px 20px;border-radius:8px;border:none;background:var(--primary);color:#fff;cursor:pointer">Neu laden</button>
       </div>`;
-  } finally {
-    routerRunning = false;
   }
 }
 
 supabase.auth.onAuthStateChange(async (event, session) => {
-  // INITIAL_SESSION wird unten via getSession() behandelt — kein doppelter Aufruf
-  if (event === 'INITIAL_SESSION') return;
-
   // Token-Erneuerung transparent im Hintergrund — kein Re-Render nötig
   if (event === 'TOKEN_REFRESHED') {
     currentUser = session?.user ?? null;
@@ -71,8 +66,3 @@ supabase.auth.onAuthStateChange(async (event, session) => {
 });
 
 window.addEventListener('hashchange', router);
-
-// Einmaliger Start-Check
-const { data: { session } } = await supabase.auth.getSession();
-currentUser = session?.user ?? null;
-await router();
