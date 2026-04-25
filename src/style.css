@@ -181,9 +181,11 @@ body {
   .stat-label { font-size: 12px; }
 
   /* Kalender-Zellen auf kleinen Screens */
-  .cal-day { min-height: 44px; aspect-ratio: auto; }
+  .calendar-grid { gap: 2px; }
+  .cal-day { min-height: 40px; aspect-ratio: auto; }
   .cal-day-emoji { font-size: 12px; }
-  .layout-calendar-sidebar > .card { padding: 12px !important; }
+  .cal-header { padding: 6px 0; }
+  .layout-calendar-sidebar > .card { padding: 10px !important; overflow: hidden; }
 
   /* Toast unten, über Bottom-Nav */
   .toast-container { left: 16px; right: 16px; bottom: 80px; }
