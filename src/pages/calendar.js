@@ -39,13 +39,18 @@ export async function renderCalendar(prof) {
             <div class="card mb-16">
               <h3 style="font-size:15px;font-weight:700;margin-bottom:14px">Legende</h3>
               <div class="legend" style="flex-direction:column">
-                ${Object.entries(DAY_TYPES).map(([k,v]) => `
+                ${Object.entries(DAY_TYPES).filter(([k]) => k !== 'HOLIDAY').map(([k,v]) => `
                   <div class="legend-item">
                     <div class="legend-dot" style="background:${v.color}"></div>
                     <span>${v.emoji} ${v.label}</span>
                     ${v.reducesRequired ? '<span class="text-xs text-muted">(–Pflicht)</span>' : ''}
                     ${v.countsAsPresent ? '<span class="text-xs text-success">(+Präsenz)</span>' : ''}
                   </div>`).join('')}
+                <div class="legend-item">
+                  <div class="legend-dot" style="background:#8b5cf6"></div>
+                  <span>🎉 Feiertag <em style="font-size:11px;font-style:normal;color:var(--text-muted)">(automatisch)</em></span>
+                  <span class="text-xs text-muted">(–Pflicht)</span>
+                </div>
               </div>
             </div>
             <div class="card">
@@ -109,7 +114,7 @@ function renderGrid() {
 
     const emoji = type && DAY_TYPES[type] ? DAY_TYPES[type].emoji : (isHol && !isWknd ? '🎉' : '');
 
-    html += `<div class="${classes}" ${!isWknd ? `onclick="openDayModal('${ds}')"` : ''} title="${isHol ? holidayMap.get(ds) : ''}">
+    html += `<div class="${classes}" ${!isWknd && !isHol ? `onclick="openDayModal('${ds}')"` : ''} title="${isHol ? holidayMap.get(ds) : ''}">
       <span class="cal-day-num">${d}</span>
       ${emoji ? `<span class="cal-day-emoji">${emoji}</span>` : ''}
     </div>`;
@@ -140,13 +145,33 @@ window.openDayModal = function(dateStr) {
 
   const formatted = date.toLocaleDateString('de-DE', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
 
+  // Feiertage sind fix — kein manuelles Bearbeiten erlaubt
+  if (isHol) {
+    document.getElementById('day-modal').innerHTML = `
+      <div class="modal-overlay" onclick="if(event.target===this)closeDayModal()">
+        <div class="modal slide-up">
+          <div class="modal-title">🎉 Feiertag</div>
+          <div class="modal-date">${formatted}</div>
+          <div style="text-align:center;padding:16px 0;color:var(--text-muted);font-size:14px">
+            <strong style="color:var(--text-primary)">${holidayMap.get(dateStr)}</strong><br>
+            Dieser Tag wird automatisch als Feiertag gezählt.
+          </div>
+          <button class="btn-secondary" onclick="closeDayModal()" style="width:100%">Schließen</button>
+        </div>
+      </div>`;
+    return;
+  }
+
+  // Nur nicht-Feiertag-Typen anzeigen
+  const selectableTypes = Object.entries(DAY_TYPES).filter(([k]) => k !== 'HOLIDAY');
+
   document.getElementById('day-modal').innerHTML = `
     <div class="modal-overlay" onclick="if(event.target===this)closeDayModal()">
       <div class="modal slide-up">
         <div class="modal-title">Tag eintragen</div>
         <div class="modal-date">${formatted}</div>
         <div class="type-grid">
-          ${Object.entries(DAY_TYPES).map(([k,v]) => `
+          ${selectableTypes.map(([k,v]) => `
             <button class="type-btn ${currentType===k?'active':''}" onclick="setDayType('${dateStr}','${k}')">
               <span class="type-emoji">${v.emoji}</span>${v.label}
             </button>`).join('')}
@@ -159,7 +184,7 @@ window.openDayModal = function(dateStr) {
 window.closeDayModal = function() { document.getElementById('day-modal').innerHTML = ''; };
 
 window.setDayType = async function(dateStr, type) {
-  const isHol = holidayMap.has(dateStr);
+  if (type === 'HOLIDAY' || holidayMap.has(dateStr)) { showToast('❌ Feiertage können nicht manuell eingetragen werden', 'error'); return; }
   const { error } = await supabase.from('attendance').upsert({
     member_id: profile.id, date: dateStr, type
   }, { onConflict: 'member_id,date' });

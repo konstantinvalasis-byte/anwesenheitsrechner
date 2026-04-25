@@ -1,4 +1,4 @@
-import { getBWHolidays, isWeekend } from './holidays.js';
+import { getBWHolidays, isWeekend, dateKey } from './holidays.js';
 
 export const DAY_TYPES = {
   OFFICE:   { label: 'Büro',         emoji: '🏢', color: '#6366f1', countsAsPresent: true,  reducesRequired: false },
@@ -17,17 +17,18 @@ export const PRESENCE_TARGET = 0.5; // 50%
  * @param {number} year
  * @param {number} month - 0-indexed
  */
-export function calculateMonthStats(entries, year, month) {
+export function calculateMonthStats(entries, year, month, toDate = null) {
   const holidayMap = getBWHolidays(year);
   const daysInMonth = new Date(year, month + 1, 0).getDate();
 
   let totalWorkingDays = 0;
   let autoHolidays = [];
 
-  // Count working days and find auto-holidays
+  // Count working days and find auto-holidays (bis toDate wenn angegeben)
   for (let d = 1; d <= daysInMonth; d++) {
     const date = new Date(year, month, d);
-    const dateStr = date.toISOString().split('T')[0];
+    const dateStr = dateKey(date);
+    if (toDate && dateStr > toDate) break;
     const dayOfWeek = date.getDay();
 
     if (dayOfWeek === 0 || dayOfWeek === 6) continue; // skip weekends
@@ -39,7 +40,7 @@ export function calculateMonthStats(entries, year, month) {
     }
   }
 
-  // Count entries by type
+  // Count entries by type (nur bis toDate wenn angegeben)
   const counts = {
     OFFICE: 0,
     REMOTE: 0,
@@ -51,14 +52,15 @@ export function calculateMonthStats(entries, year, month) {
 
   const entryMap = {};
   (entries || []).forEach(e => {
+    if (toDate && e.date > toDate) return;
     if (counts.hasOwnProperty(e.type)) {
       counts[e.type]++;
     }
     entryMap[e.date] = e.type;
   });
 
-  // Net working days = total working days - absence days (vacation, holiday, flex, sick)
-  const absenceDays = counts.VACATION + counts.HOLIDAY + counts.FLEX + counts.SICK;
+  // Net working days = total working days - absence days (Feiertage werden automatisch über holidayMap berechnet)
+  const absenceDays = counts.VACATION + counts.FLEX + counts.SICK;
   const netWorkingDays = Math.max(0, totalWorkingDays - absenceDays);
 
   // Required presence days (rounded up)

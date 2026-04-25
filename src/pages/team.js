@@ -1,6 +1,6 @@
 import { supabase } from '../supabase.js';
 import { renderNavbar } from '../components/navbar.js';
-import { calculateMonthStats } from '../calculator.js';
+import { getWorkingDays } from '../holidays.js';
 import { getMonthState, setMonthState } from '../monthState.js';
 
 const MONTH_NAMES = ['Januar','Februar','März','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember'];
@@ -39,16 +39,13 @@ export async function renderTeam(prof) {
 async function loadTeam() {
   document.getElementById('month-display').textContent = `${MONTH_NAMES[currentMonth]} ${currentYear}`;
 
-  // Get team stats via RPC function
+  // Aggregierte Tagestypen für die Balkenübersicht
   const { data: statsData, error } = await supabase.rpc('get_team_stats', {
     p_year: currentYear, p_month: currentMonth + 1
   });
 
-  // Get member count
-  const { count: memberCount } = await supabase.from('profiles').select('*', { count: 'exact', head: true });
-
-  // Get per-member anonymous percentages
-  const { data: perMember } = await supabase.rpc('get_team_member_percentages', {
+  // Pro-Mitglied anonyme Rohdaten (office + absence Tage)
+  const { data: rawStats } = await supabase.rpc('get_team_member_stats', {
     p_year: currentYear, p_month: currentMonth + 1
   });
 
@@ -58,50 +55,79 @@ async function loadTeam() {
     return;
   }
 
+  const today = new Date();
+  const isCurrentMonth = currentYear === today.getFullYear() && currentMonth === today.getMonth();
+  const todayStr = today.toISOString().slice(0, 10);
+
+  const allWorkingDays = getWorkingDays(currentYear, currentMonth);
+  const workingDays    = allWorkingDays.length;
+  const workingDaysMTD = isCurrentMonth
+    ? allWorkingDays.filter(d => d <= todayStr).length
+    : workingDays;
+
+  function calcMembers(wDays) {
+    return (rawStats || []).map(m => {
+      const net = Math.max(wDays - Number(m.absence_days), 0);
+      return { percentage: net > 0 ? Math.round(Number(m.office_days) / net * 100) : 0 };
+    });
+  }
+
+  const members    = calcMembers(workingDays);
+  const membersMTD = isCurrentMonth ? calcMembers(workingDaysMTD) : null;
+
   const typeCounts = {};
   (statsData || []).forEach(row => { typeCounts[row.type] = parseInt(row.total_days); });
 
-  const members = perMember || [];
-  const above = members.filter(m => m.percentage >= 50).length;
-  const below = members.filter(m => m.percentage < 50).length;
-  const avg = members.length > 0
-    ? Math.round(members.reduce((s, m) => s + m.percentage, 0) / members.length)
-    : 0;
+  function teamSummary(mems) {
+    const above = mems.filter(m => m.percentage >= 50).length;
+    const below = mems.filter(m => m.percentage < 50).length;
+    const avg   = mems.length > 0
+      ? Math.round(mems.reduce((s, m) => s + m.percentage, 0) / mems.length)
+      : 0;
+    return { above, below, avg };
+  }
 
-  const avgColor = avg >= 50 ? '#10b981' : avg >= 35 ? '#f59e0b' : '#ef4444';
+  const summary    = teamSummary(members);
+  const summaryMTD = membersMTD ? teamSummary(membersMTD) : null;
+
+  const avgColor = summary.avg >= 50 ? '#10b981' : summary.avg >= 35 ? '#f59e0b' : '#ef4444';
 
   document.getElementById('team-content').innerHTML = `
     <div class="grid grid-3 mb-24">
       <div class="stat-card" style="background:linear-gradient(135deg,rgba(99,102,241,0.15),rgba(99,102,241,0.05))">
         <div class="stat-icon">📊</div>
-        <div class="stat-value" style="color:${avgColor}">${avg}%</div>
+        <div class="stat-value" style="color:${avgColor}">${summary.avg}%</div>
         <div class="stat-label">Team-Durchschnitt</div>
+        ${summaryMTD ? renderMTDBadge(summaryMTD.avg, summary.avg, '%') : ''}
       </div>
       <div class="stat-card" style="background:linear-gradient(135deg,rgba(16,185,129,0.15),rgba(16,185,129,0.05))">
         <div class="stat-icon">✅</div>
-        <div class="stat-value text-success">${above}</div>
+        <div class="stat-value text-success">${summary.above}</div>
         <div class="stat-label">Mitglieder ≥ 50%</div>
+        ${summaryMTD ? renderMTDBadge(summaryMTD.above, summary.above, '') : ''}
       </div>
       <div class="stat-card" style="background:linear-gradient(135deg,rgba(239,68,68,0.15),rgba(239,68,68,0.05))">
         <div class="stat-icon">⚠️</div>
-        <div class="stat-value text-danger">${below}</div>
+        <div class="stat-value text-danger">${summary.below}</div>
         <div class="stat-label">Mitglieder < 50%</div>
+        ${summaryMTD ? renderMTDBadge(summaryMTD.below, summary.below, '') : ''}
       </div>
     </div>
 
     <div class="grid grid-2">
       <div class="card">
-        <h3 style="font-size:16px;font-weight:700;margin-bottom:20px">Anwesenheitsverteilung (anonym)</h3>
-        ${members.length === 0
+        <h3 style="font-size:16px;font-weight:700;margin-bottom:20px">Anwesenheitsverteilung (anonym)${summaryMTD ? ' <span style="font-size:12px;font-weight:500;color:var(--text-muted)">· Bis heute</span>' : ''}</h3>
+        ${(membersMTD || members).length === 0
           ? `<div class="empty-state"><div class="empty-icon">📭</div>Noch keine Daten für diesen Monat</div>`
-          : members.sort((a,b) => b.percentage - a.percentage).map((m, i) => {
+          : (membersMTD || members).sort((a,b) => b.percentage - a.percentage).map((m, i) => {
             const pct = Math.min(m.percentage, 100);
             const color = pct >= 50 ? '#10b981' : pct >= 35 ? '#f59e0b' : '#ef4444';
+            const fullPct = members[i] ? Math.min(members[i].percentage, 100) : pct;
             return `
               <div style="margin-bottom:14px">
                 <div class="flex-between text-sm mb-8">
                   <span class="text-muted">Mitglied ${i+1}</span>
-                  <span class="fw-bold" style="color:${color}">${m.percentage}%</span>
+                  <span class="fw-bold" style="color:${color}">${m.percentage}%${summaryMTD && members[i] ? ` <span style="font-size:11px;color:var(--text-muted);font-weight:400">/ ${members[i].percentage}% Monat</span>` : ''}</span>
                 </div>
                 <div class="team-bar-bg">
                   <div class="team-bar-fill" style="width:${pct}%;background:${color}"></div>
@@ -143,5 +169,67 @@ async function loadTeam() {
         </div>
       </div>
     </div>
+
+    <div class="card mt-24" style="background:linear-gradient(135deg,rgba(99,102,241,0.06),rgba(99,102,241,0.02))">
+      <h3 style="font-size:16px;font-weight:700;margin-bottom:20px">📐 So wird die Anwesenheitsquote berechnet</h3>
+      <div class="grid grid-2" style="gap:24px;margin-bottom:20px">
+        <div>
+          <div style="font-size:13px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:12px">Schritt für Schritt</div>
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <div style="display:flex;gap:12px;align-items:flex-start">
+              <div style="min-width:24px;height:24px;border-radius:50%;background:rgba(99,102,241,0.15);color:#6366f1;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center">1</div>
+              <div>
+                <div style="font-size:14px;font-weight:600;color:var(--text-primary)">Arbeitstage zählen</div>
+                <div style="font-size:13px;color:var(--text-muted);margin-top:2px">Alle Montag–Freitag im Monat, ohne gesetzliche Feiertage (BW)</div>
+              </div>
+            </div>
+            <div style="display:flex;gap:12px;align-items:flex-start">
+              <div style="min-width:24px;height:24px;border-radius:50%;background:rgba(99,102,241,0.15);color:#6366f1;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center">2</div>
+              <div>
+                <div style="font-size:14px;font-weight:600;color:var(--text-primary)">Abwesenheiten abziehen</div>
+                <div style="font-size:13px;color:var(--text-muted);margin-top:2px">Urlaub, Gleittage und Kranktage verringern die Pflichtanwesenheit</div>
+              </div>
+            </div>
+            <div style="display:flex;gap:12px;align-items:flex-start">
+              <div style="min-width:24px;height:24px;border-radius:50%;background:rgba(99,102,241,0.15);color:#6366f1;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center">3</div>
+              <div>
+                <div style="font-size:14px;font-weight:600;color:var(--text-primary)">Quote berechnen</div>
+                <div style="font-size:13px;color:var(--text-muted);margin-top:2px">Bürotage ÷ Netto-Arbeitstage × 100</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div>
+          <div style="font-size:13px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:12px">Beispiel</div>
+          <div style="background:var(--bg-secondary);border-radius:10px;padding:16px;font-size:13px;line-height:1.8">
+            <div style="display:flex;justify-content:space-between"><span style="color:var(--text-muted)">Arbeitstage im Monat</span><span style="font-weight:600">23</span></div>
+            <div style="display:flex;justify-content:space-between"><span style="color:var(--text-muted)">− Urlaub / Gleittag / Krank</span><span style="font-weight:600">− 5</span></div>
+            <div style="border-top:1px solid var(--border);margin:6px 0"></div>
+            <div style="display:flex;justify-content:space-between"><span style="color:var(--text-muted)">= Netto-Arbeitstage</span><span style="font-weight:600">18</span></div>
+            <div style="display:flex;justify-content:space-between"><span style="color:var(--text-muted)">Bürotage (eingetragen)</span><span style="font-weight:600">9</span></div>
+            <div style="border-top:1px solid var(--border);margin:6px 0"></div>
+            <div style="display:flex;justify-content:space-between"><span style="color:var(--text-primary);font-weight:700">= Anwesenheitsquote</span><span style="color:#10b981;font-weight:700">9 ÷ 18 = <strong>50 %</strong></span></div>
+          </div>
+        </div>
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:8px;padding-top:16px;border-top:1px solid var(--border)">
+        <div style="font-size:12px;color:var(--text-muted);display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border-radius:2px;background:#6366f1;display:inline-block"></span>🏢 Büro zählt als Anwesenheit</div>
+        <div style="font-size:12px;color:var(--text-muted);display:flex;align-items:center;gap:5px;margin-left:8px"><span style="width:10px;height:10px;border-radius:2px;background:#64748b;display:inline-block"></span>🏠 Mobiles Arbeiten zählt <em>nicht</em></div>
+        <div style="font-size:12px;color:var(--text-muted);display:flex;align-items:center;gap:5px;margin-left:8px"><span style="width:10px;height:10px;border-radius:2px;background:#f59e0b;display:inline-block"></span>🌴 Urlaub, ⏰ Gleittag, 🤒 Krank reduzieren Pflicht-AT</div>
+        <div style="font-size:12px;color:var(--text-muted);display:flex;align-items:center;gap:5px;margin-left:8px"><span style="width:10px;height:10px;border-radius:2px;background:#8b5cf6;display:inline-block"></span>🎉 Feiertage werden automatisch rausgerechnet</div>
+      </div>
+    </div>
   `;
+}
+
+function renderMTDBadge(mtdVal, fullVal, suffix) {
+  return `
+    <div style="display:flex;gap:6px;margin-top:8px;justify-content:center">
+      <span style="font-size:11px;background:var(--bg-secondary);border-radius:6px;padding:3px 8px;color:var(--text-muted)">
+        Bis heute: <strong style="color:var(--text-primary)">${mtdVal}${suffix}</strong>
+      </span>
+      <span style="font-size:11px;background:var(--bg-secondary);border-radius:6px;padding:3px 8px;color:var(--text-muted)">
+        Monat: <strong style="color:var(--text-primary)">${fullVal}${suffix}</strong>
+      </span>
+    </div>`;
 }
