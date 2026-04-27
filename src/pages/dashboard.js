@@ -62,11 +62,12 @@ async function loadData(profile) {
     .lte('date', endDate);
 
   const today = new Date();
-  const isCurrentMonth = currentYear === today.getFullYear() && currentMonth === today.getMonth();
   const todayStr = today.toISOString().slice(0, 10);
+  const isPastMonth = currentYear < today.getFullYear() ||
+    (currentYear === today.getFullYear() && currentMonth < today.getMonth());
 
   const statsFullMonth = calculateMonthStats(entries || [], currentYear, currentMonth);
-  const statsMTD = isCurrentMonth
+  const statsMTD = !isPastMonth
     ? calculateMonthStats(entries || [], currentYear, currentMonth, todayStr)
     : null;
 
@@ -77,8 +78,8 @@ function renderStats(stats, statsMTD, profile) {
   const circumference = 2 * Math.PI * 90;
   const targetOffset = circumference - (50 / 100) * circumference;
 
-  // Ring zeigt MTD wenn verfügbar, sonst Gesamtmonat
-  const ringStats = statsMTD || stats;
+  // Ring zeigt immer Gesamtmonat
+  const ringStats = stats;
   const pctRing = Math.min(ringStats.percentage, 100);
   const offsetRing = circumference - (pctRing / 100) * circumference;
 
@@ -112,13 +113,13 @@ function renderStats(stats, statsMTD, profile) {
           </svg>
           <div class="progress-ring-center" style="position:absolute;flex-direction:column;display:flex;align-items:center">
             <span class="ring-percent" style="color:${ringColor}">${ringStats.percentage}%</span>
-            <span class="ring-label">${statsMTD ? 'Bis heute' : 'Anwesenheit'}</span>
+            <span class="ring-label">Anwesenheit</span>
             <span class="ring-status ${statusClass}">${statusText}</span>
           </div>
         </div>
         <div style="text-align:center">
           <div style="font-size:15px;font-weight:600">${ringStats.actualDays} von ${ringStats.requiredDays} Tagen</div>
-          <div class="text-muted text-sm">Ziel: ${ringStats.requiredDays} Bürotage ${statsMTD ? 'bis heute' : 'diesen Monat'}</div>
+          <div class="text-muted text-sm">Ziel: ${ringStats.requiredDays} Bürotage diesen Monat</div>
         </div>
         ${statsMTD ? renderQuoteBadges(statsMTD, stats) : ''}
       </div>
@@ -206,10 +207,10 @@ function renderQuoteBadges(statsMTD, statsFullMonth) {
     const color = s.targetMet ? '#10b981' : (s.percentage >= 35 ? '#f59e0b' : '#ef4444');
     const icon  = s.targetMet ? '✅' : (s.percentage >= 35 ? '⚠️' : '❌');
     return `
-      <div style="flex:1;background:var(--bg-secondary);border-radius:12px;padding:12px 14px;text-align:center;min-width:120px">
-        <div style="font-size:11px;font-weight:600;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">${label}</div>
+      <div style="flex:1;background:var(--bg-secondary);border-radius:12px;padding:12px 14px;text-align:center;min-width:120px;display:flex;flex-direction:column;align-items:center;justify-content:center">
+        <div style="font-size:11px;font-weight:600;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.05em;min-height:28px;display:flex;align-items:center;justify-content:center;margin-bottom:4px">${label}</div>
         <div style="font-size:22px;font-weight:800;color:${color};line-height:1">${s.percentage}%</div>
-        <div style="font-size:12px;margin-top:4px">${icon} ${s.targetMet ? 'Ziel erreicht' : (s.percentage >= 35 ? 'Knapp drunter' : 'Unter Ziel')}</div>
+        <div style="font-size:12px;margin-top:4px;white-space:nowrap">${icon} ${s.targetMet ? 'Ziel erreicht' : (s.percentage >= 35 ? 'Knapp drunter' : 'Unter Ziel')}</div>
       </div>`;
   }
   return `
