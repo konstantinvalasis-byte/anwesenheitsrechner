@@ -22,7 +22,7 @@ export async function renderCalendar(prof) {
       <div class="container">
         <div class="page-header flex-between">
           <div>
-            <h1 class="page-title">📅 Kalender</h1>
+            <h1 class="page-title">📅 Mein Kalender</h1>
             <p class="page-subtitle">Klicke auf einen Tag um den Typ einzutragen</p>
           </div>
           <div class="month-selector">
@@ -156,7 +156,7 @@ window.openDayModal = function(dateStr) {
             <strong style="color:var(--text-primary)">${holidayMap.get(dateStr)}</strong><br>
             Dieser Tag wird automatisch als Feiertag gezählt.
           </div>
-          <button class="btn-secondary" onclick="closeDayModal()" style="width:100%">Schließen</button>
+          <button class="btn btn-ghost" onclick="closeDayModal()" style="width:100%">Schließen</button>
         </div>
       </div>`;
     return;

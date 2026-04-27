@@ -93,7 +93,7 @@ async function loadTeam() {
   const avgColor = summary.avg >= 50 ? '#10b981' : summary.avg >= 35 ? '#f59e0b' : '#ef4444';
 
   document.getElementById('team-content').innerHTML = `
-    <div class="grid grid-3 mb-24">
+    <div class="grid grid-3 team-stat-grid mb-24">
       <div class="stat-card" style="background:linear-gradient(135deg,rgba(99,102,241,0.15),rgba(99,102,241,0.05))">
         <div class="stat-icon">📊</div>
         <div class="stat-value" style="color:${avgColor}">${summary.avg}%</div>
@@ -224,12 +224,8 @@ async function loadTeam() {
 
 function renderMTDBadge(mtdVal, fullVal, suffix) {
   return `
-    <div style="display:flex;gap:6px;margin-top:8px;justify-content:center">
-      <span style="font-size:11px;background:var(--bg-secondary);border-radius:6px;padding:3px 8px;color:var(--text-muted)">
-        Bis heute: <strong style="color:var(--text-primary)">${mtdVal}${suffix}</strong>
-      </span>
-      <span style="font-size:11px;background:var(--bg-secondary);border-radius:6px;padding:3px 8px;color:var(--text-muted)">
-        Monat: <strong style="color:var(--text-primary)">${fullVal}${suffix}</strong>
-      </span>
+    <div class="mtd-badges">
+      <span class="mtd-badge">Bis heute: <strong style="color:var(--text-primary)">${mtdVal}${suffix}</strong></span>
+      <span class="mtd-badge">Monat: <strong style="color:var(--text-primary)">${fullVal}${suffix}</strong></span>
     </div>`;
 }

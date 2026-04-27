@@ -8,8 +8,8 @@
   --border: rgba(255,255,255,0.08);
   --border-focus: rgba(99,102,241,0.6);
   --text-primary: #f1f5f9;
-  --text-secondary: #94a3b8;
-  --text-muted: #475569;
+  --text-secondary: #b0bec5;
+  --text-muted: #7c8fa6;
   --accent: #6366f1;
   --accent-light: #818cf8;
   --accent-glow: rgba(99,102,241,0.3);
@@ -152,18 +152,21 @@ body {
   .page { padding-bottom: calc(72px + env(safe-area-inset-bottom, 0px)); }
   .container { padding: 0 16px; }
 
-  /* Page header stackt vertikal */
-  .page-header { padding: 20px 0 16px; }
+  /* Page header: Titel links, Monatsauswahl rechts — eine Zeile */
+  .page-header { padding: 12px 0 10px; }
   .page-header.flex-between {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 12px;
+    flex-direction: row;
+    align-items: center;
+    gap: 8px;
   }
-  .month-selector { width: 100%; }
-  .month-display { flex: 1; }
+  .page-header.flex-between > div:first-child { min-width: 0; }
+  .page-subtitle { display: none; }
+  .month-selector { width: auto; flex-shrink: 0; padding: 6px 10px; }
+  .month-display { min-width: 100px; font-size: 13px; }
+  .month-btn { padding: 2px 6px; font-size: 16px; }
 
   /* Page title kleiner */
-  .page-title { font-size: 22px; }
+  .page-title { font-size: 18px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
   /* Progress Ring auf Mobile */
   .progress-ring-container { width: 180px !important; height: 180px !important; }
@@ -183,7 +186,7 @@ body {
   /* Kalender-Zellen auf kleinen Screens */
   .calendar-grid { gap: 2px; }
   .cal-day { min-height: 40px; aspect-ratio: auto; }
-  .cal-day-emoji { font-size: 12px; }
+  .cal-day-emoji { font-size: 14px; }
   .cal-header { padding: 6px 0; }
   .layout-calendar-sidebar > .card { padding: 10px !important; overflow: hidden; }
 
@@ -205,7 +208,7 @@ body {
   .bottom-nav-btn {
     flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
     padding: 4px 2px; background: none; border: none;
-    color: var(--text-muted); font-size: 10px; font-weight: 500;
+    color: var(--text-secondary); font-size: 11px; font-weight: 500;
     cursor: pointer; font-family: inherit; transition: var(--transition);
     min-width: 0; overflow: hidden; touch-action: manipulation;
   }
@@ -216,6 +219,24 @@ body {
   }
   .bottom-nav-btn.active { color: var(--accent-light); }
   .bottom-nav-btn:hover { color: var(--text-primary); }
+
+  /* Team stat grid: 3 Spalten beibehalten, kompakt */
+  .team-stat-grid {
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 8px;
+    margin-bottom: 16px !important;
+  }
+  .team-stat-grid .stat-card { padding: 10px 8px; gap: 3px; }
+  .team-stat-grid .stat-value { font-size: 22px; }
+  .team-stat-grid .stat-icon { font-size: 16px; }
+  .team-stat-grid .stat-label { font-size: 11px; }
+
+  /* MTD badges kompakter */
+  .mtd-badges { flex-direction: column; gap: 3px; margin-top: 5px; align-items: center; }
+
+  /* mb-24 auf Mobile reduzieren */
+  .mb-24 { margin-bottom: 14px; }
+  .mt-24 { margin-top: 14px; }
 }
 
 /* Sehr schmale Screens: nur Icons, kein Text */
@@ -280,8 +301,8 @@ body {
   gap: 4px;
 }
 .cal-header {
-  text-align: center; font-size: 11px; font-weight: 600;
-  color: var(--text-muted); padding: 8px 0; text-transform: uppercase; letter-spacing: 0.05em;
+  text-align: center; font-size: 12px; font-weight: 600;
+  color: var(--text-secondary); padding: 8px 0; text-transform: uppercase; letter-spacing: 0.05em;
 }
 .cal-day {
   aspect-ratio: 1; border-radius: 10px;
@@ -293,9 +314,9 @@ body {
 .cal-day:hover:not(.cal-weekend):not(.cal-empty) { border-color: var(--accent); transform: scale(1.05); z-index: 1; }
 .cal-day-num { font-size: 13px; font-weight: 600; line-height: 1; }
 .cal-day-emoji { font-size: 14px; line-height: 1; }
-.cal-day.cal-weekend { cursor: default; opacity: 0.3; }
+.cal-day.cal-weekend { cursor: default; opacity: 0.45; }
 .cal-day.cal-empty { cursor: default; }
-.cal-day.cal-today { border-color: var(--accent) !important; box-shadow: 0 0 0 2px var(--accent-glow); }
+.cal-day.cal-today { border-color: var(--accent) !important; background: rgba(99,102,241,0.12) !important; box-shadow: 0 0 0 2px var(--accent-glow); }
 .cal-day.has-entry { background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.1); }
 .cal-day.type-OFFICE { background: rgba(99,102,241,0.2); border-color: rgba(99,102,241,0.4); }
 .cal-day.type-REMOTE { background: rgba(100,116,139,0.2); border-color: rgba(100,116,139,0.3); }
@@ -465,6 +486,10 @@ body {
 
 .fade-in { animation: fadeIn 0.3s ease; }
 .slide-up { animation: slideUp 0.3s cubic-bezier(0.4,0,0.2,1); }
+
+/* ── MTD Badges ── */
+.mtd-badges { display: flex; gap: 6px; margin-top: 8px; justify-content: center; }
+.mtd-badge { font-size: 11px; background: var(--bg-secondary); border-radius: 6px; padding: 3px 8px; color: var(--text-muted); }
 
 /* ── Divider ── */
 .divider { height: 1px; background: var(--border); margin: 24px 0; }

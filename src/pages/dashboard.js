@@ -207,7 +207,7 @@ function renderQuoteBadges(statsMTD, statsFullMonth) {
     const icon  = s.targetMet ? '✅' : (s.percentage >= 35 ? '⚠️' : '❌');
     return `
       <div style="flex:1;background:var(--bg-secondary);border-radius:12px;padding:12px 14px;text-align:center;min-width:120px">
-        <div style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">${label}</div>
+        <div style="font-size:11px;font-weight:600;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">${label}</div>
         <div style="font-size:22px;font-weight:800;color:${color};line-height:1">${s.percentage}%</div>
         <div style="font-size:12px;margin-top:4px">${icon} ${s.targetMet ? 'Ziel erreicht' : (s.percentage >= 35 ? 'Knapp drunter' : 'Unter Ziel')}</div>
       </div>`;
