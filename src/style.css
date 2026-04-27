@@ -81,6 +81,13 @@ body {
 .nav-link:hover { color: var(--text-primary); background: var(--bg-card); }
 .nav-link.active { color: var(--accent-light); background: rgba(99,102,241,0.12); }
 .navbar-actions { display: flex; align-items: center; gap: 12px; }
+.navbar-admin-btn {
+  display: flex; align-items: center; justify-content: center;
+  width: 28px; height: 28px; padding: 0; background: none; border: none;
+  color: var(--text-secondary); opacity: 0.4; cursor: pointer;
+  border-radius: 6px; transition: var(--transition);
+}
+.navbar-admin-btn:hover, .navbar-admin-btn.active { opacity: 1; color: var(--text-primary); }
 .user-badge {
   display: flex; align-items: center; gap: 8px;
   padding: 6px 12px; border-radius: 20px;
@@ -219,6 +226,12 @@ body {
   }
   .bottom-nav-btn.active { color: var(--accent-light); }
   .bottom-nav-btn:hover { color: var(--text-primary); }
+  .bottom-nav-admin {
+    flex: 0 0 auto; width: 36px; opacity: 0.35;
+    padding: 4px 6px;
+  }
+  .bottom-nav-admin:hover, .bottom-nav-admin.active { opacity: 1; }
+  .bottom-nav-admin svg { display: block; }
 
   /* Team stat grid: 3 Spalten beibehalten, kompakt */
   .team-stat-grid {

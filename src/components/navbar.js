@@ -17,13 +17,15 @@ export function renderNavbar(profile, activePage) {
       <button class="nav-link ${activePage==='dashboard'?'active':''}" onclick="navigate('dashboard')">🏠 Dashboard</button>
       <button class="nav-link ${activePage==='calendar'?'active':''}" onclick="navigate('calendar')">📅 Kalender</button>
       <button class="nav-link ${activePage==='team'?'active':''}" onclick="navigate('team')">👥 Team</button>
-      ${isAdmin ? `<button class="nav-link ${activePage==='admin'?'active':''}" onclick="navigate('admin')">⚙️ Admin</button>` : ''}
     </nav>
     <div class="navbar-actions">
       <div class="user-badge">
         <div class="avatar">${initials}</div>
         <span>${profile?.name || 'Benutzer'}</span>
       </div>
+      ${isAdmin ? `<button class="navbar-admin-btn ${activePage==='admin'?'active':''}" onclick="navigate('admin')" title="Adminbereich">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      </button>` : ''}
       <button class="btn btn-ghost btn-sm" id="btn-logout" onclick="doLogout()">Abmelden</button>
     </div>
   `;
@@ -46,12 +48,12 @@ export function renderNavbar(profile, activePage) {
     <button class="bottom-nav-btn ${activePage==='team'?'active':''}" onclick="navigate('team')">
       <span class="nav-icon">👥</span><span class="nav-label">Team</span>
     </button>
-    ${isAdmin ? `<button class="bottom-nav-btn ${activePage==='admin'?'active':''}" onclick="navigate('admin')">
-      <span class="nav-icon">⚙️</span><span class="nav-label">Admin</span>
-    </button>` : ''}
     <button class="bottom-nav-btn" onclick="doLogout()">
       <span class="nav-icon">🚪</span><span class="nav-label">Abmelden</span>
     </button>
+    ${isAdmin ? `<button class="bottom-nav-btn bottom-nav-admin ${activePage==='admin'?'active':''}" onclick="navigate('admin')" title="Adminbereich">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+    </button>` : ''}
   `;
 }
 
