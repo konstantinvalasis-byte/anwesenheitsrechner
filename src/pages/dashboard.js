@@ -215,7 +215,7 @@ function renderQuoteBadges(statsMTD, statsFullMonth) {
   }
   return `
     <div style="display:flex;gap:10px;width:100%;max-width:300px">
-      ${badge('Bis heute', statsMTD)}
+      ${badge('Monat bis heute', statsMTD)}
       ${badge('Gesamter Monat', statsFullMonth)}
     </div>`;
 }

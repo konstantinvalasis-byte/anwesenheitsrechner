@@ -109,4 +109,43 @@ export function getWorkingDays(year, month) {
   return days;
 }
 
+/**
+ * BW Schulferien — hardcodierte Daten (offiziell für 2024/2025, vorläufig für 2026)
+ */
+const BW_SCHULFERIEN = [
+  // 2024
+  { name: 'Weihnachtsferien', start: '2024-12-23', end: '2025-01-04' },
+  // 2025
+  { name: 'Fastnachtsferien', start: '2025-03-03', end: '2025-03-05' },
+  { name: 'Osterferien',       start: '2025-04-14', end: '2025-04-25' },
+  { name: 'Pfingstferien',     start: '2025-06-07', end: '2025-06-21' },
+  { name: 'Sommerferien',      start: '2025-07-31', end: '2025-09-13' },
+  { name: 'Herbstferien',      start: '2025-10-27', end: '2025-10-31' },
+  { name: 'Weihnachtsferien',  start: '2025-12-22', end: '2026-01-05' },
+  // 2026 (vorläufig)
+  { name: 'Fastnachtsferien', start: '2026-02-16', end: '2026-02-18' },
+  { name: 'Osterferien',       start: '2026-03-30', end: '2026-04-11' },
+  { name: 'Pfingstferien',     start: '2026-05-26', end: '2026-06-06' },
+  { name: 'Sommerferien',      start: '2026-07-30', end: '2026-09-12' },
+  { name: 'Herbstferien',      start: '2026-10-26', end: '2026-10-30' },
+  { name: 'Weihnachtsferien',  start: '2026-12-23', end: '2027-01-04' },
+];
+
+/**
+ * Gibt alle Schulferienperioden zurück, die das angegebene Jahr berühren
+ */
+export function getBWSchulferien(year) {
+  return BW_SCHULFERIEN.filter(f => f.start.startsWith(`${year}`) || f.end.startsWith(`${year}`));
+}
+
+/**
+ * Gibt den Feriennamen zurück, wenn dateStr in einer Ferienperiode liegt, sonst null
+ */
+export function getSchulferienName(dateStr, schulferienList) {
+  for (const f of schulferienList) {
+    if (dateStr >= f.start && dateStr <= f.end) return f.name;
+  }
+  return null;
+}
+
 export { dateKey };

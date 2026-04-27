@@ -1,7 +1,7 @@
 import { supabase } from '../supabase.js';
 import { renderNavbar } from '../components/navbar.js';
 import { showToast } from '../components/toast.js';
-import { getBWHolidays, isWeekend, dateKey } from '../holidays.js';
+import { getBWHolidays, getBWSchulferien, getSchulferienName, isWeekend, dateKey } from '../holidays.js';
 import { DAY_TYPES } from '../calculator.js';
 import { getMonthState, setMonthState } from '../monthState.js';
 
@@ -12,6 +12,7 @@ let currentYear, currentMonth;
 let entries = [];
 let profile = null;
 let holidayMap = new Map();
+let schulferienList = [];
 
 export async function renderCalendar(prof) {
   profile = prof;
@@ -57,6 +58,10 @@ export async function renderCalendar(prof) {
               <h3 style="font-size:15px;font-weight:700;margin-bottom:14px">Feiertage (BW)</h3>
               <div id="holiday-list" class="text-sm text-muted">Lade…</div>
             </div>
+            <div class="card" style="margin-top:12px">
+              <h3 style="font-size:15px;font-weight:700;margin-bottom:14px">Schulferien (BW)</h3>
+              <div id="schulferien-list" class="text-sm text-muted">Lade…</div>
+            </div>
           </div>
         </div>
       </div>
@@ -72,6 +77,8 @@ export async function renderCalendar(prof) {
 
 async function loadCalendar() {
   holidayMap = getBWHolidays(currentYear);
+  // Schulferien für aktuelles Jahr + Vorjahr laden (Dezember-Ferien reichen ins Folgejahr)
+  schulferienList = [...getBWSchulferien(currentYear - 1), ...getBWSchulferien(currentYear)];
   document.getElementById('month-display').textContent = `${MONTH_NAMES[currentMonth]} ${currentYear}`;
 
   const start = `${currentYear}-${String(currentMonth+1).padStart(2,'0')}-01`;
@@ -107,16 +114,21 @@ function renderGrid() {
     const type = entryMap[ds] || (isHol && !isWknd ? 'HOLIDAY' : null);
     const isToday = ds === today;
 
+    const ferienName = getSchulferienName(ds, schulferienList);
+
     let classes = 'cal-day';
     if (isWknd) classes += ' cal-weekend';
+    if (ferienName && !isHol) classes += ' cal-schulferien';
     if (isToday) classes += ' cal-today';
     if (type) classes += ` has-entry type-${type}`;
 
     const emoji = type && DAY_TYPES[type] ? DAY_TYPES[type].emoji : (isHol && !isWknd ? '🎉' : '');
+    const titleAttr = isHol ? holidayMap.get(ds) : (ferienName ? `Schulferien: ${ferienName}` : '');
 
-    html += `<div class="${classes}" ${!isWknd && !isHol ? `onclick="openDayModal('${ds}')"` : ''} title="${isHol ? holidayMap.get(ds) : ''}">
+    html += `<div class="${classes}" ${!isWknd && !isHol ? `onclick="openDayModal('${ds}')"` : ''} title="${titleAttr}">
       <span class="cal-day-num">${d}</span>
       ${emoji ? `<span class="cal-day-emoji">${emoji}</span>` : ''}
+      ${ferienName && !isHol && !type ? `<span class="cal-ferien-dot" title="${ferienName}"></span>` : ''}
     </div>`;
   }
 
@@ -127,14 +139,35 @@ function renderGrid() {
 }
 
 function renderHolidays() {
-  const monthHols = [...holidayMap.entries()]
-    .filter(([d]) => d.startsWith(`${currentYear}-${String(currentMonth+1).padStart(2,'0')}`));
-  const el = document.getElementById('holiday-list');
-  if (!monthHols.length) { el.innerHTML = '<div style="color:var(--text-muted)">Keine Feiertage</div>'; return; }
-  el.innerHTML = monthHols.map(([d, name]) => {
+  const monthPrefix = `${currentYear}-${String(currentMonth+1).padStart(2,'0')}`;
+
+  // Feiertage
+  const monthHols = [...holidayMap.entries()].filter(([d]) => d.startsWith(monthPrefix));
+  const holEl = document.getElementById('holiday-list');
+  if (!monthHols.length) { holEl.innerHTML = '<div style="color:var(--text-muted)">Keine Feiertage</div>'; }
+  else holEl.innerHTML = monthHols.map(([d, name]) => {
     const date = new Date(d + 'T12:00:00');
     return `<div style="margin-bottom:8px"><div style="font-weight:600;color:var(--text-primary)">${name}</div><div class="text-xs text-muted">${date.toLocaleDateString('de-DE',{weekday:'long',day:'numeric',month:'long'})}</div></div>`;
   }).join('');
+
+  // Schulferien — alle Perioden die in den aktuellen Monat reichen
+  const monthStart = `${monthPrefix}-01`;
+  const monthEnd   = `${monthPrefix}-${new Date(currentYear, currentMonth+1, 0).getDate()}`;
+  const ferienImMonat = schulferienList.filter(f => f.start <= monthEnd && f.end >= monthStart);
+  const ferienEl = document.getElementById('schulferien-list');
+  if (!ferienImMonat.length) {
+    ferienEl.innerHTML = '<div style="color:var(--text-muted)">Keine Schulferien</div>';
+  } else {
+    ferienEl.innerHTML = ferienImMonat.map(f => {
+      const start = new Date(f.start + 'T12:00:00');
+      const end   = new Date(f.end   + 'T12:00:00');
+      const fmt = d => d.toLocaleDateString('de-DE', { day:'numeric', month:'short' });
+      return `<div style="margin-bottom:8px;display:flex;align-items:flex-start;gap:8px">
+        <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--ferien-color,#f59e0b);margin-top:4px;flex-shrink:0"></span>
+        <div><div style="font-weight:600;color:var(--text-primary)">${f.name}</div><div class="text-xs text-muted">${fmt(start)} – ${fmt(end)}</div></div>
+      </div>`;
+    }).join('');
+  }
 }
 
 window.openDayModal = function(dateStr) {
