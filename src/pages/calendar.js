@@ -33,11 +33,11 @@ export async function renderCalendar(prof) {
           </div>
         </div>
         <div class="layout-calendar-sidebar">
-          <div class="card" style="padding:20px">
+          <div class="card" style="padding:20px;height:100%;box-sizing:border-box">
             <div id="calendar-grid"></div>
           </div>
-          <div>
-            <div class="card mb-16">
+          <div style="display:flex;flex-direction:column;gap:12px">
+            <div class="card">
               <h3 style="font-size:15px;font-weight:700;margin-bottom:14px">Legende</h3>
               <div class="legend" style="flex-direction:column">
                 ${Object.entries(DAY_TYPES).filter(([k]) => k !== 'HOLIDAY').map(([k,v]) => `
@@ -58,7 +58,7 @@ export async function renderCalendar(prof) {
               <h3 style="font-size:15px;font-weight:700;margin-bottom:14px">Feiertage (BW)</h3>
               <div id="holiday-list" class="text-sm text-muted">Lade…</div>
             </div>
-            <div class="card" style="margin-top:12px">
+            <div class="card" style="flex:1">
               <h3 style="font-size:15px;font-weight:700;margin-bottom:14px">Schulferien (BW)</h3>
               <div id="schulferien-list" class="text-sm text-muted">Lade…</div>
             </div>
@@ -111,7 +111,7 @@ function renderGrid() {
     const dow = date.getDay(); // 0=Sun, 6=Sat
     const isWknd = dow === 0 || dow === 6;
     const isHol = holidayMap.has(ds);
-    const type = entryMap[ds] || (isHol && !isWknd ? 'HOLIDAY' : null);
+    const type = (isHol && !isWknd) ? 'HOLIDAY' : (entryMap[ds] || null);
     const isToday = ds === today;
 
     const ferienName = getSchulferienName(ds, schulferienList);

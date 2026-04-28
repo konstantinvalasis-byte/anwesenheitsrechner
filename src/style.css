@@ -136,7 +136,7 @@ body {
   display: grid;
   grid-template-columns: 1fr 280px;
   gap: 20px;
-  align-items: start;
+  align-items: stretch;
 }
 
 /* ── Bottom Nav (Mobile) ── */
@@ -403,7 +403,7 @@ body {
 .form-input {
   padding: 12px 16px; border-radius: var(--radius-sm);
   border: 1px solid var(--border); background: rgba(255,255,255,0.04);
-  color: var(--text-primary); font-size: 14px; font-family: inherit;
+  color: var(--text-primary); font-size: 16px; font-family: inherit;
   transition: var(--transition); outline: none;
 }
 .form-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); }
