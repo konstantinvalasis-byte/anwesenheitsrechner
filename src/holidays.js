@@ -129,6 +129,18 @@ const BW_SCHULFERIEN = [
   { name: 'Sommerferien',      start: '2026-07-30', end: '2026-09-12' },
   { name: 'Herbstferien',      start: '2026-10-26', end: '2026-10-30' },
   { name: 'Weihnachtsferien',  start: '2026-12-23', end: '2027-01-04' },
+  // 2027
+  { name: 'Osterferien',       start: '2027-03-30', end: '2027-04-03' },
+  { name: 'Pfingstferien',     start: '2027-05-18', end: '2027-05-29' },
+  { name: 'Sommerferien',      start: '2027-07-29', end: '2027-09-11' },
+  { name: 'Herbstferien',      start: '2027-11-02', end: '2027-11-06' },
+  { name: 'Weihnachtsferien',  start: '2027-12-23', end: '2028-01-08' },
+  // 2028
+  { name: 'Osterferien',       start: '2028-04-18', end: '2028-04-22' },
+  { name: 'Pfingstferien',     start: '2028-06-06', end: '2028-06-17' },
+  { name: 'Sommerferien',      start: '2028-07-27', end: '2028-09-09' },
+  { name: 'Herbstferien',      start: '2028-10-30', end: '2028-11-03' },
+  { name: 'Weihnachtsferien',  start: '2028-12-23', end: '2029-01-05' },
 ];
 
 /**

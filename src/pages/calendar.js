@@ -26,10 +26,13 @@ export async function renderCalendar(prof) {
             <h1 class="page-title">📅 Mein Kalender</h1>
             <p class="page-subtitle">Klicke auf einen Tag um den Typ einzutragen</p>
           </div>
-          <div class="month-selector">
-            <button class="month-btn" id="btn-prev">‹</button>
-            <span class="month-display" id="month-display"></span>
-            <button class="month-btn" id="btn-next">›</button>
+          <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+            <button class="btn btn-danger btn-sm" id="btn-clear-all" style="display:none">🗑 Monat löschen</button>
+            <div class="month-selector">
+              <button class="month-btn" id="btn-prev">‹</button>
+              <span class="month-display" id="month-display"></span>
+              <button class="month-btn" id="btn-next">›</button>
+            </div>
           </div>
         </div>
         <div class="layout-calendar-sidebar">
@@ -72,6 +75,7 @@ export async function renderCalendar(prof) {
   renderNavbar(profile, 'calendar');
   document.getElementById('btn-prev').onclick = () => { currentMonth--; if(currentMonth<0){currentMonth=11;currentYear--;} setMonthState(currentYear, currentMonth); loadCalendar(); };
   document.getElementById('btn-next').onclick = () => { currentMonth++; if(currentMonth>11){currentMonth=0;currentYear++;} setMonthState(currentYear, currentMonth); loadCalendar(); };
+  document.getElementById('btn-clear-all').onclick = () => openClearAllModal();
   await loadCalendar();
 }
 
@@ -118,17 +122,17 @@ function renderGrid() {
 
     let classes = 'cal-day';
     if (isWknd) classes += ' cal-weekend';
-    if (ferienName && !isHol) classes += ' cal-schulferien';
+    if (ferienName && (!isHol || isWknd)) classes += ' cal-schulferien';
     if (isToday) classes += ' cal-today';
     if (type) classes += ` has-entry type-${type}`;
 
-    const emoji = type && DAY_TYPES[type] ? DAY_TYPES[type].emoji : (isHol && !isWknd ? '🎉' : '');
+    const emoji = type && DAY_TYPES[type] ? DAY_TYPES[type].emoji : (isHol ? '🎉' : '');
     const titleAttr = isHol ? holidayMap.get(ds) : (ferienName ? `Schulferien: ${ferienName}` : '');
 
     html += `<div class="${classes}" ${!isWknd && !isHol ? `onclick="openDayModal('${ds}')"` : ''} title="${titleAttr}">
       <span class="cal-day-num">${d}</span>
       ${emoji ? `<span class="cal-day-emoji">${emoji}</span>` : ''}
-      ${ferienName && !isHol && !type ? `<span class="cal-ferien-dot" title="${ferienName}"></span>` : ''}
+      ${ferienName && (!isHol || isWknd) && !type ? `<span class="cal-ferien-dot" title="${ferienName}"></span>` : ''}
     </div>`;
   }
 
@@ -136,6 +140,8 @@ function renderGrid() {
   for (let i = lastDow + 1; i < 7; i++) html += `<div class="cal-day cal-empty"></div>`;
   html += `</div>`;
   document.getElementById('calendar-grid').innerHTML = html;
+  const btn = document.getElementById('btn-clear-all');
+  if (btn) btn.style.display = entries.length > 0 ? 'inline-flex' : 'none';
 }
 
 function renderHolidays() {
@@ -237,6 +243,40 @@ window.clearDay = async function(dateStr) {
   if (error) { showToast('❌ Fehler beim Löschen', 'error'); return; }
   entries = entries.filter(e => e.date !== dateStr);
   showToast('🗑 Eintrag gelöscht', 'info');
+  closeDayModal();
+  renderGrid();
+};
+
+function openClearAllModal() {
+  const count = entries.length;
+  if (count === 0) return;
+  const monthLabel = `${MONTH_NAMES[currentMonth]} ${currentYear}`;
+  document.getElementById('day-modal').innerHTML = `
+    <div class="modal-overlay" onclick="if(event.target===this)closeDayModal()">
+      <div class="modal slide-up">
+        <div class="modal-title">🗑 Monat löschen</div>
+        <div style="text-align:center;padding:12px 0 20px;color:var(--text-muted);font-size:14px;line-height:1.6">
+          Alle <strong style="color:var(--text-primary)">${count} Einträge</strong> für
+          <strong style="color:var(--text-primary)">${monthLabel}</strong> werden gelöscht.<br>
+          Diese Aktion kann nicht rückgängig gemacht werden.
+        </div>
+        <div style="display:flex;gap:10px">
+          <button class="btn btn-ghost" onclick="closeDayModal()" style="flex:1">Abbrechen</button>
+          <button class="btn btn-danger" onclick="clearAllEntries()" style="flex:1">Löschen</button>
+        </div>
+      </div>
+    </div>`;
+}
+
+window.clearAllEntries = async function() {
+  const count = entries.length;
+  const start = `${currentYear}-${String(currentMonth+1).padStart(2,'0')}-01`;
+  const end   = `${currentYear}-${String(currentMonth+1).padStart(2,'0')}-${new Date(currentYear,currentMonth+1,0).getDate()}`;
+  const { error } = await supabase.from('attendance')
+    .delete().eq('member_id', profile.id).gte('date', start).lte('date', end);
+  if (error) { showToast('❌ Fehler beim Löschen', 'error'); return; }
+  entries = [];
+  showToast(`🗑 ${count} Einträge gelöscht`, 'info');
   closeDayModal();
   renderGrid();
 };
