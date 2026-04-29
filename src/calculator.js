@@ -17,7 +17,7 @@ export const PRESENCE_TARGET = 0.5; // 50%
  * @param {number} year
  * @param {number} month - 0-indexed
  */
-export function calculateMonthStats(entries, year, month, toDate = null) {
+export function calculateMonthStats(entries, year, month, toDate = null, workDays = [1,2,3,4,5]) {
   const holidayMap = getBWHolidays(year);
   const daysInMonth = new Date(year, month + 1, 0).getDate();
 
@@ -31,7 +31,7 @@ export function calculateMonthStats(entries, year, month, toDate = null) {
     if (toDate && dateStr > toDate) break;
     const dayOfWeek = date.getDay();
 
-    if (dayOfWeek === 0 || dayOfWeek === 6) continue; // skip weekends
+    if (!workDays.includes(dayOfWeek)) continue; // skip non-working days (Wochenende + Teilzeit-freie Tage)
 
     if (holidayMap.has(dateStr)) {
       autoHolidays.push(dateStr);

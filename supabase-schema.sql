@@ -133,6 +133,14 @@ CREATE OR REPLACE TRIGGER on_auth_user_created
   FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
 
 -- ============================================================
+-- MIGRATION: work_days für Teilzeit-Unterstützung (einmalig ausführen)
+-- Werte: 1=Mo, 2=Di, 3=Mi, 4=Do, 5=Fr (JS getDay()-Konvention)
+-- Default = Vollzeit (Mo–Fr), bestehende User sind nicht betroffen.
+-- ============================================================
+-- ALTER TABLE public.profiles
+--   ADD COLUMN IF NOT EXISTS work_days INTEGER[] NOT NULL DEFAULT ARRAY[1,2,3,4,5];
+
+-- ============================================================
 -- OPTIONAL: Ersten Admin manuell setzen
 -- Ersetze <USER-UUID> mit der UUID aus Authentication > Users
 -- ============================================================

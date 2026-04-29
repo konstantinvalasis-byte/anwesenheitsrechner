@@ -329,6 +329,7 @@ body {
 .cal-day-emoji { font-size: 14px; line-height: 1; }
 .cal-day.cal-weekend { cursor: default; opacity: 0.45; }
 .cal-day.cal-weekend.cal-schulferien { opacity: 0.65; }
+.cal-day.cal-off-day { cursor: default; opacity: 0.28; background: repeating-linear-gradient(45deg, transparent, transparent 4px, rgba(255,255,255,0.03) 4px, rgba(255,255,255,0.03) 8px); }
 .cal-day.cal-empty { cursor: default; }
 .cal-day.cal-today { border-color: var(--accent) !important; background: rgba(99,102,241,0.12) !important; box-shadow: 0 0 0 2px var(--accent-glow); }
 .cal-day.has-entry { background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.1); }
@@ -549,3 +550,16 @@ body {
 .flex-between { display: flex; align-items: center; justify-content: space-between; }
 .flex-gap-8 { gap: 8px; }
 .flex-gap-16 { gap: 16px; }
+
+/* ── Settings: Workday-Toggle ── */
+.workdays-row { display: flex; gap: 10px; flex-wrap: wrap; }
+.workday-toggle {
+  display: flex; align-items: center; justify-content: center;
+  width: 52px; height: 52px; border-radius: 12px;
+  border: 1.5px solid var(--border); background: var(--bg-secondary);
+  font-size: 14px; font-weight: 700; color: var(--text-secondary);
+  cursor: pointer; transition: all 0.15s ease; user-select: none;
+}
+.workday-toggle input { display: none; }
+.workday-toggle:hover { border-color: var(--accent); color: var(--text-primary); }
+.workday-toggle.active { background: rgba(99,102,241,0.2); border-color: var(--accent); color: var(--accent-light); }

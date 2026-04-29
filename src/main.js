@@ -5,6 +5,7 @@ import { renderDashboard } from './pages/dashboard.js';
 import { renderCalendar } from './pages/calendar.js';
 import { renderTeam } from './pages/team.js';
 import { renderAdmin } from './pages/admin.js';
+import { renderSettings } from './pages/settings.js';
 
 // Sofort Lade-Indikator — #app bleibt nie leer
 document.getElementById('app').innerHTML =
@@ -34,7 +35,8 @@ async function router() {
       return;
     }
 
-    if (!currentProfile) {
+    if (!currentProfile || window.__profileNeedsRefresh) {
+      window.__profileNeedsRefresh = false;
       const profile = await getProfile(currentUser.id);
       if (seq !== renderSeq) return;
       if (!profile) { renderLogin(); return; }
@@ -48,6 +50,7 @@ async function router() {
       calendar:  () => renderCalendar(currentProfile),
       team:      () => renderTeam(currentProfile),
       admin:     () => renderAdmin(currentProfile),
+      settings:  () => renderSettings(currentProfile),
     };
 
     await (routes[hash] || routes['dashboard'])();

@@ -19,7 +19,7 @@ export function renderNavbar(profile, activePage) {
       <button class="nav-link ${activePage==='team'?'active':''}" onclick="navigate('team')">👥 Team</button>
     </nav>
     <div class="navbar-actions">
-      <div class="user-badge">
+      <div class="user-badge" onclick="navigate('settings')" style="cursor:pointer" title="Einstellungen">
         <div class="avatar">${initials}</div>
         <span>${profile?.name || 'Benutzer'}</span>
       </div>
@@ -47,6 +47,9 @@ export function renderNavbar(profile, activePage) {
     </button>
     <button class="bottom-nav-btn ${activePage==='team'?'active':''}" onclick="navigate('team')">
       <span class="nav-icon">👥</span><span class="nav-label">Team</span>
+    </button>
+    <button class="bottom-nav-btn ${activePage==='settings'?'active':''}" onclick="navigate('settings')">
+      <span class="nav-icon">⚙️</span><span class="nav-label">Einstellungen</span>
     </button>
     <button class="bottom-nav-btn" onclick="doLogout()">
       <span class="nav-icon">🚪</span><span class="nav-label">Abmelden</span>
