@@ -66,9 +66,10 @@ async function loadData(profile) {
   const isPastMonth = currentYear < today.getFullYear() ||
     (currentYear === today.getFullYear() && currentMonth < today.getMonth());
 
-  const statsFullMonth = calculateMonthStats(entries || [], currentYear, currentMonth);
+  const workDays = profile.work_days || [1,2,3,4,5];
+  const statsFullMonth = calculateMonthStats(entries || [], currentYear, currentMonth, null, workDays);
   const statsMTD = !isPastMonth
-    ? calculateMonthStats(entries || [], currentYear, currentMonth, todayStr)
+    ? calculateMonthStats(entries || [], currentYear, currentMonth, todayStr, workDays)
     : null;
 
   renderStats(statsFullMonth, statsMTD, profile);
@@ -90,8 +91,9 @@ function renderStats(stats, statsMTD, profile) {
   const ringColor = ringStats.targetMet ? '#10b981' : (ringStats.percentage >= 35 ? '#f59e0b' : '#ef4444');
 
   const holidayMap = getBWHolidays(currentYear);
+  const monthPrefix = `${currentYear}-${String(currentMonth+1).padStart(2,'0')}`;
   const upcomingHolidays = [...holidayMap.entries()]
-    .filter(([d]) => d >= `${currentYear}-${String(currentMonth+1).padStart(2,'0')}-01` && d <= `${currentYear}-${String(currentMonth+1).padStart(2,'0')}-31`)
+    .filter(([d]) => d.startsWith(monthPrefix))
     .slice(0, 4);
 
   document.getElementById('dashboard-content').innerHTML = `

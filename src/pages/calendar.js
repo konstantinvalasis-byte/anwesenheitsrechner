@@ -100,6 +100,7 @@ function renderGrid() {
   const daysInMonth = new Date(currentYear, currentMonth+1, 0).getDate();
   const firstDayOfWeek = (new Date(currentYear, currentMonth, 1).getDay() + 6) % 7; // Mon=0
   const today = dateKey(new Date());
+  const workDays = profile.work_days || [1,2,3,4,5];
 
   const entryMap = {};
   entries.forEach(e => entryMap[e.date] = e.type);
@@ -114,25 +115,28 @@ function renderGrid() {
     const ds = dateKey(date);
     const dow = date.getDay(); // 0=Sun, 6=Sat
     const isWknd = dow === 0 || dow === 6;
+    const isOffDay = !isWknd && !workDays.includes(dow); // Teilzeit-freier Wochentag
     const isHol = holidayMap.has(ds);
-    const type = (isHol && !isWknd) ? 'HOLIDAY' : (entryMap[ds] || null);
+    const type = (isHol && !isWknd && !isOffDay) ? 'HOLIDAY' : (entryMap[ds] || null);
     const isToday = ds === today;
 
     const ferienName = getSchulferienName(ds, schulferienList);
 
     let classes = 'cal-day';
     if (isWknd) classes += ' cal-weekend';
-    if (ferienName && (!isHol || isWknd)) classes += ' cal-schulferien';
+    else if (isOffDay) classes += ' cal-off-day';
+    if (ferienName && (!isHol || isWknd || isOffDay)) classes += ' cal-schulferien';
     if (isToday) classes += ' cal-today';
     if (type) classes += ` has-entry type-${type}`;
 
-    const emoji = type && DAY_TYPES[type] ? DAY_TYPES[type].emoji : (isHol ? '🎉' : '');
-    const titleAttr = isHol ? holidayMap.get(ds) : (ferienName ? `Schulferien: ${ferienName}` : '');
+    const emoji = type && DAY_TYPES[type] ? DAY_TYPES[type].emoji : (isHol && !isOffDay ? '🎉' : '');
+    const titleAttr = isOffDay ? 'Kein Arbeitstag' : (isHol ? holidayMap.get(ds) : (ferienName ? `Schulferien: ${ferienName}` : ''));
+    const clickable = !isWknd && !isOffDay && !isHol;
 
-    html += `<div class="${classes}" ${!isWknd && !isHol ? `onclick="openDayModal('${ds}')"` : ''} title="${titleAttr}">
+    html += `<div class="${classes}" ${clickable ? `onclick="openDayModal('${ds}')"` : ''} title="${titleAttr}">
       <span class="cal-day-num">${d}</span>
       ${emoji ? `<span class="cal-day-emoji">${emoji}</span>` : ''}
-      ${ferienName && (!isHol || isWknd) && !type ? `<span class="cal-ferien-dot" title="${ferienName}"></span>` : ''}
+      ${ferienName && (!isHol || isWknd || isOffDay) && !type ? `<span class="cal-ferien-dot" title="${ferienName}"></span>` : ''}
     </div>`;
   }
 
@@ -224,6 +228,7 @@ window.closeDayModal = function() { document.getElementById('day-modal').innerHT
 
 window.setDayType = async function(dateStr, type) {
   if (type === 'HOLIDAY' || holidayMap.has(dateStr)) { showToast('❌ Feiertage können nicht manuell eingetragen werden', 'error'); return; }
+  document.querySelectorAll('.type-btn').forEach(b => b.disabled = true);
   const { error } = await supabase.from('attendance').upsert({
     member_id: profile.id, date: dateStr, type
   }, { onConflict: 'member_id,date' });

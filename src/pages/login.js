@@ -109,5 +109,5 @@ window.doRegister = async function() {
   }
 
   showToast('✅ Konto erstellt! Du kannst dich jetzt anmelden.', 'success');
-  setTimeout(() => { currentTab = 'login'; renderLoginForm(); }, 1500);
+  setTimeout(() => window.switchTab('login'), 1500);
 };
