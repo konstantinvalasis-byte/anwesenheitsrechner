@@ -98,19 +98,21 @@ $$;
 
 -- 9. Per-member anonymous raw counts (SECURITY DEFINER für RLS-Bypass – kein PII, nur Summen)
 -- Prozente werden client-seitig mit denselben Feiertagen wie das Dashboard berechnet.
+-- work_days wird mitgegeben damit der Client pro Mitglied korrekte Arbeitstage berechnen kann.
 -- Nur User mit exclude_from_team = FALSE werden berücksichtigt.
 CREATE OR REPLACE FUNCTION public.get_team_member_stats(p_year INT, p_month INT)
-RETURNS TABLE(office_days BIGINT, absence_days BIGINT)
+RETURNS TABLE(office_days BIGINT, absence_days BIGINT, work_days INT[])
 LANGUAGE sql SECURITY DEFINER SET search_path = public AS $$
   SELECT
     COUNT(*) FILTER (WHERE a.type = 'OFFICE')::BIGINT                    AS office_days,
-    COUNT(*) FILTER (WHERE a.type IN ('VACATION','FLEX','SICK'))::BIGINT  AS absence_days
+    COUNT(*) FILTER (WHERE a.type IN ('VACATION','FLEX','SICK'))::BIGINT  AS absence_days,
+    COALESCE(p.work_days, ARRAY[1,2,3,4,5])                              AS work_days
   FROM attendance a
   JOIN profiles p ON p.id = a.member_id
   WHERE EXTRACT(YEAR  FROM a.date) = p_year
     AND EXTRACT(MONTH FROM a.date) = p_month
     AND p.exclude_from_team = FALSE
-  GROUP BY a.member_id
+  GROUP BY a.member_id, p.work_days
   ORDER BY office_days DESC;
 $$;
 

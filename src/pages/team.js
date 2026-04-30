@@ -59,21 +59,21 @@ async function loadTeam() {
   const isCurrentMonth = currentYear === today.getFullYear() && currentMonth === today.getMonth();
   const todayStr = today.toISOString().slice(0, 10);
 
-  const allWorkingDays = getWorkingDays(currentYear, currentMonth);
-  const workingDays    = allWorkingDays.length;
-  const workingDaysMTD = isCurrentMonth
-    ? allWorkingDays.filter(d => d <= todayStr).length
-    : workingDays;
-
-  function calcMembers(wDays) {
+  // calcMembers berechnet pro Mitglied anhand dessen work_days die korrekten Arbeitstage
+  function calcMembers(isMTD) {
     return (rawStats || []).map(m => {
-      const net = Math.max(wDays - Number(m.absence_days), 0);
+      const memberWorkDays = m.work_days || [1,2,3,4,5];
+      const allMemberDays  = getWorkingDays(currentYear, currentMonth, memberWorkDays);
+      const memberTotal    = isMTD && isCurrentMonth
+        ? allMemberDays.filter(d => d <= todayStr).length
+        : allMemberDays.length;
+      const net = Math.max(memberTotal - Number(m.absence_days), 0);
       return { percentage: net > 0 ? Math.round(Number(m.office_days) / net * 100) : 0 };
     });
   }
 
-  const members    = calcMembers(workingDays);
-  const membersMTD = isCurrentMonth ? calcMembers(workingDaysMTD) : null;
+  const members    = calcMembers(false);
+  const membersMTD = isCurrentMonth ? calcMembers(true) : null;
 
   const typeCounts = {};
   (statsData || []).forEach(row => { typeCounts[row.type] = parseInt(row.total_days); });

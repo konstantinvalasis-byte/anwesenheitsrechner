@@ -89,9 +89,10 @@ export function isWeekend(dateStr) {
 }
 
 /**
- * Returns all working days (Mon-Fri, excluding BW holidays) in a given month
+ * Returns all working days (excluding BW holidays) in a given month.
+ * workDays: array of JS weekday numbers (0=So,1=Mo,...,6=Sa), default Mon–Fr
  */
-export function getWorkingDays(year, month) {
+export function getWorkingDays(year, month, workDays = [1,2,3,4,5]) {
   const holidayMap = getBWHolidays(year);
   const days = [];
   const daysInMonth = new Date(year, month + 1, 0).getDate();
@@ -101,7 +102,7 @@ export function getWorkingDays(year, month) {
     const dateStr = dateKey(date);
     const dayOfWeek = date.getDay();
 
-    if (dayOfWeek !== 0 && dayOfWeek !== 6 && !holidayMap.has(dateStr)) {
+    if (workDays.includes(dayOfWeek) && !holidayMap.has(dateStr)) {
       days.push(dateStr);
     }
   }
