@@ -46,13 +46,17 @@ CREATE POLICY "attendance_own_all"   ON public.attendance FOR ALL     TO authent
 CREATE POLICY "attendance_admin_sel" ON public.attendance FOR SELECT  TO authenticated USING (public.is_admin());
 
 -- 7. Team stats function (aggregated, bypasses RLS – safe because no PII)
+-- Nur User mit exclude_from_team = FALSE werden berücksichtigt.
 CREATE OR REPLACE FUNCTION public.get_team_stats(p_year INT, p_month INT)
 RETURNS TABLE(type TEXT, total_days BIGINT, member_count BIGINT)
 LANGUAGE sql SECURITY DEFINER SET search_path = public AS $$
-  SELECT type, COUNT(*) AS total_days, COUNT(DISTINCT member_id) AS member_count
-  FROM attendance
-  WHERE EXTRACT(YEAR FROM date) = p_year AND EXTRACT(MONTH FROM date) = p_month
-  GROUP BY type;
+  SELECT a.type, COUNT(*) AS total_days, COUNT(DISTINCT a.member_id) AS member_count
+  FROM attendance a
+  JOIN profiles p ON p.id = a.member_id
+  WHERE EXTRACT(YEAR FROM a.date) = p_year
+    AND EXTRACT(MONTH FROM a.date) = p_month
+    AND p.exclude_from_team = FALSE
+  GROUP BY a.type;
 $$;
 
 -- 8. Per-member anonymous percentages (no names, just percentages sorted desc)
@@ -94,16 +98,19 @@ $$;
 
 -- 9. Per-member anonymous raw counts (SECURITY DEFINER für RLS-Bypass – kein PII, nur Summen)
 -- Prozente werden client-seitig mit denselben Feiertagen wie das Dashboard berechnet.
+-- Nur User mit exclude_from_team = FALSE werden berücksichtigt.
 CREATE OR REPLACE FUNCTION public.get_team_member_stats(p_year INT, p_month INT)
 RETURNS TABLE(office_days BIGINT, absence_days BIGINT)
 LANGUAGE sql SECURITY DEFINER SET search_path = public AS $$
   SELECT
-    COUNT(*) FILTER (WHERE type = 'OFFICE')::BIGINT        AS office_days,
-    COUNT(*) FILTER (WHERE type IN ('VACATION','FLEX','SICK'))::BIGINT AS absence_days
-  FROM attendance
-  WHERE EXTRACT(YEAR  FROM date) = p_year
-    AND EXTRACT(MONTH FROM date) = p_month
-  GROUP BY member_id
+    COUNT(*) FILTER (WHERE a.type = 'OFFICE')::BIGINT                    AS office_days,
+    COUNT(*) FILTER (WHERE a.type IN ('VACATION','FLEX','SICK'))::BIGINT  AS absence_days
+  FROM attendance a
+  JOIN profiles p ON p.id = a.member_id
+  WHERE EXTRACT(YEAR  FROM a.date) = p_year
+    AND EXTRACT(MONTH FROM a.date) = p_month
+    AND p.exclude_from_team = FALSE
+  GROUP BY a.member_id
   ORDER BY office_days DESC;
 $$;
 
@@ -139,6 +146,13 @@ CREATE OR REPLACE TRIGGER on_auth_user_created
 -- ============================================================
 -- ALTER TABLE public.profiles
 --   ADD COLUMN IF NOT EXISTS work_days INTEGER[] NOT NULL DEFAULT ARRAY[1,2,3,4,5];
+
+-- ============================================================
+-- MIGRATION: exclude_from_team für Datenschutz-Opt-out (einmalig ausführen)
+-- Bestehende User erhalten automatisch FALSE (= sichtbar, bisheriges Verhalten).
+-- ============================================================
+-- ALTER TABLE public.profiles
+--   ADD COLUMN IF NOT EXISTS exclude_from_team BOOLEAN NOT NULL DEFAULT FALSE;
 
 -- ============================================================
 -- OPTIONAL: Ersten Admin manuell setzen

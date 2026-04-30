@@ -12,6 +12,7 @@ const WORK_DAY_LABELS = [
 
 export async function renderSettings(profile) {
   const workDays = profile.work_days || [1,2,3,4,5];
+  const excludeFromTeam = profile.exclude_from_team ?? false;
 
   document.getElementById('app').innerHTML = `
     <div id="navbar" class="navbar"></div>
@@ -28,7 +29,7 @@ export async function renderSettings(profile) {
           <input id="input-name" class="form-input" type="text" value="${escapeHtml(profile.name || '')}" maxlength="60" placeholder="Dein Name" />
         </div>
 
-        <div class="card">
+        <div class="card" style="margin-bottom:16px">
           <h3 style="font-size:15px;font-weight:700;margin-bottom:6px">Arbeitstage</h3>
           <p class="text-muted text-sm" style="margin-bottom:18px">
             Wähle die Tage, an denen du arbeitest. Vollzeitkräfte lassen alle Haken gesetzt.
@@ -44,6 +45,23 @@ export async function renderSettings(profile) {
           <p class="text-muted text-xs" style="margin-top:12px" id="workdays-hint">${workdayHint(workDays)}</p>
         </div>
 
+        <div class="card">
+          <h3 style="font-size:15px;font-weight:700;margin-bottom:6px">Datenschutz</h3>
+          <p class="text-muted text-sm" style="margin-bottom:16px">
+            Wenn aktiv, tauchen deine Daten nicht in der anonymen Team-Statistik auf.
+            Dein Dashboard und der Admin-Bereich sind davon nicht betroffen.
+          </p>
+          <label class="settings-toggle-row">
+            <div>
+              <div style="font-size:14px;font-weight:600;color:var(--text-primary)">Nicht in Teamstatistik erscheinen</div>
+              <div class="text-xs text-muted" style="margin-top:2px">Deine Einträge fließen nicht in die Team-Übersicht ein</div>
+            </div>
+            <div class="toggle-switch ${excludeFromTeam ? 'active' : ''}" id="toggle-exclude" onclick="toggleExclude()" role="switch" aria-checked="${excludeFromTeam}" tabindex="0" onkeydown="if(event.key===' '||event.key==='Enter')toggleExclude()">
+              <div class="toggle-knob"></div>
+            </div>
+          </label>
+        </div>
+
         <div style="margin-top:20px;display:flex;gap:10px">
           <button class="btn btn-ghost" onclick="navigate('dashboard')">Abbrechen</button>
           <button class="btn btn-primary" id="btn-save" onclick="saveSettings()">Speichern</button>
@@ -54,6 +72,12 @@ export async function renderSettings(profile) {
 
   renderNavbar(profile, 'settings');
 }
+
+window.toggleExclude = function() {
+  const el = document.getElementById('toggle-exclude');
+  const active = el.classList.toggle('active');
+  el.setAttribute('aria-checked', active);
+};
 
 window.updateWorkdayToggle = function(checkbox) {
   const label = checkbox.closest('.workday-toggle');
@@ -83,10 +107,12 @@ window.saveSettings = async function() {
     return;
   }
 
+  const excludeFromTeam = document.getElementById('toggle-exclude').classList.contains('active');
+
   const { data: { user } } = await supabase.auth.getUser();
   const { error } = await supabase
     .from('profiles')
-    .update({ name, work_days: workDays })
+    .update({ name, work_days: workDays, exclude_from_team: excludeFromTeam })
     .eq('id', user.id);
 
   if (error) {

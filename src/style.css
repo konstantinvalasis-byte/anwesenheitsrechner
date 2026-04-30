@@ -551,6 +551,22 @@ body {
 .flex-gap-8 { gap: 8px; }
 .flex-gap-16 { gap: 16px; }
 
+/* ── Settings: Datenschutz-Toggle ── */
+.settings-toggle-row { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.toggle-switch {
+  flex-shrink: 0; width: 44px; height: 24px; border-radius: 12px;
+  background: var(--border); cursor: pointer; position: relative;
+  transition: background 0.2s ease;
+}
+.toggle-switch.active { background: var(--accent); }
+.toggle-knob {
+  position: absolute; top: 3px; left: 3px;
+  width: 18px; height: 18px; border-radius: 50%;
+  background: #fff; transition: transform 0.2s ease;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+}
+.toggle-switch.active .toggle-knob { transform: translateX(20px); }
+
 /* ── Settings: Workday-Toggle ── */
 .workdays-row { display: flex; gap: 10px; flex-wrap: wrap; }
 .workday-toggle {
