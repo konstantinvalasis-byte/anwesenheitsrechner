@@ -14,6 +14,12 @@ export async function renderSettings(profile) {
   const workDays = profile.work_days || [1,2,3,4,5];
   const excludeFromTeam = profile.exclude_from_team ?? false;
 
+  let teamName = null;
+  if (profile.team_id) {
+    const { data } = await supabase.from('teams').select('name').eq('id', profile.team_id).single();
+    teamName = data?.name ?? null;
+  }
+
   document.getElementById('app').innerHTML = `
     <div id="navbar" class="navbar"></div>
     <div class="page fade-in">
@@ -27,6 +33,18 @@ export async function renderSettings(profile) {
           <h3 style="font-size:15px;font-weight:700;margin-bottom:6px">Name</h3>
           <p class="text-muted text-sm" style="margin-bottom:14px">Wird im Team und in der Navbar angezeigt.</p>
           <input id="input-name" class="form-input" type="text" value="${escapeHtml(profile.name || '')}" maxlength="60" placeholder="Dein Name" />
+        </div>
+
+        <div class="card" style="margin-bottom:16px">
+          <h3 style="font-size:15px;font-weight:700;margin-bottom:6px">Team</h3>
+          <p class="text-muted text-sm" style="margin-bottom:10px">Dein aktuelles Team.</p>
+          ${teamName
+            ? `<div style="display:flex;align-items:center;gap:10px">
+                <span style="font-size:15px;font-weight:600;color:var(--text-primary)">${escapeHtml(teamName)}</span>
+                <span class="badge badge-success" style="font-size:11px">Aktiv</span>
+               </div>`
+            : `<p class="text-muted text-sm">Du bist in keinem Team.</p>`
+          }
         </div>
 
         <div class="card" style="margin-bottom:16px">
