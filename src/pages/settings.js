@@ -49,7 +49,7 @@ export async function renderSettings(profile) {
           <h3 style="font-size:15px;font-weight:700;margin-bottom:6px">Datenschutz</h3>
           <p class="text-muted text-sm" style="margin-bottom:16px">
             Wenn aktiv, tauchen deine Daten nicht in der anonymen Team-Statistik auf.
-            Dein Dashboard und der Admin-Bereich sind davon nicht betroffen.
+            Dein Dashboard und dein Kalender sind davon nicht betroffen.
           </p>
           <label class="settings-toggle-row">
             <div>

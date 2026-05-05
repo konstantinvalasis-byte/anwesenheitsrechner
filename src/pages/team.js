@@ -1,6 +1,6 @@
 import { supabase } from '../supabase.js';
 import { renderNavbar } from '../components/navbar.js';
-import { getWorkingDays } from '../holidays.js';
+import { getWorkingDays, dateKey } from '../holidays.js';
 import { getMonthState, setMonthState } from '../monthState.js';
 
 const MONTH_NAMES = ['Januar','Februar','März','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember'];
@@ -41,7 +41,7 @@ async function loadTeam() {
 
   const today = new Date();
   const isCurrentMonth = currentYear === today.getFullYear() && currentMonth === today.getMonth();
-  const todayStr = today.toISOString().slice(0, 10);
+  const todayStr = dateKey(today);
 
   // Aggregierte Tagestypen für die Balkenübersicht
   const { data: statsData, error } = await supabase.rpc('get_team_stats', {
@@ -49,13 +49,13 @@ async function loadTeam() {
   });
 
   // Pro-Mitglied anonyme Rohdaten (office + absence Tage, MTD-gefiltert wenn aktueller Monat)
-  const { data: rawStats } = await supabase.rpc('get_team_member_stats', {
+  const { data: rawStats, error: rawError } = await supabase.rpc('get_team_member_stats', {
     p_year: currentYear,
     p_month: currentMonth + 1,
     ...(isCurrentMonth ? { p_today: todayStr } : {}),
   });
 
-  if (error) {
+  if (error || rawError) {
     document.getElementById('team-content').innerHTML = `
       <div class="alert alert-warning">⚠️ Team-Daten konnten nicht geladen werden. Bitte prüfe die Datenbankfunktionen.</div>`;
     return;
@@ -79,8 +79,19 @@ async function loadTeam() {
     });
   }
 
-  const members    = calcMembers(false);
-  const membersMTD = isCurrentMonth ? calcMembers(true) : null;
+  // Beide Arrays als Tupel [mtd, full] zusammenhalten, damit die Sortierung später
+  // immer dasselbe Mitglied an derselben Position belässt.
+  const membersRaw    = calcMembers(false);
+  const membersMTDRaw = isCurrentMonth ? calcMembers(true) : null;
+
+  // Kombinierte Tupel [{ percentage: mtd }, { percentage: full }] für spätere Sortierung
+  const memberPairs = membersRaw.map((full, i) => ({
+    full,
+    mtd: membersMTDRaw ? membersMTDRaw[i] : null,
+  }));
+
+  const members    = membersRaw;
+  const membersMTD = membersMTDRaw;
 
   const typeCounts = {};
   (statsData || []).forEach(row => { typeCounts[row.type] = parseInt(row.total_days); });
@@ -124,23 +135,25 @@ async function loadTeam() {
     <div class="grid grid-2">
       <div class="card">
         <h3 style="font-size:16px;font-weight:700;margin-bottom:20px">Anwesenheitsverteilung (anonym)${summaryMTD ? ' <span style="font-size:12px;font-weight:500;color:var(--text-muted)">· Bis heute</span>' : ''}</h3>
-        ${(membersMTD || members).length === 0
+        ${memberPairs.length === 0
           ? `<div class="empty-state"><div class="empty-icon">📭</div>Noch keine Daten für diesen Monat</div>`
-          : (membersMTD || members).sort((a,b) => b.percentage - a.percentage).map((m, i) => {
-            const pct = Math.min(m.percentage, 100);
-            const color = pct >= 50 ? '#10b981' : pct >= 35 ? '#f59e0b' : '#ef4444';
-            const fullPct = members[i] ? Math.min(members[i].percentage, 100) : pct;
-            return `
-              <div style="margin-bottom:14px">
-                <div class="flex-between text-sm mb-8">
-                  <span class="text-muted">Mitglied ${i+1}</span>
-                  <span class="fw-bold" style="color:${color}">${m.percentage}%${summaryMTD && members[i] ? ` <span style="font-size:11px;color:var(--text-muted);font-weight:400">/ ${members[i].percentage}% Monat</span>` : ''}</span>
-                </div>
-                <div class="team-bar-bg">
-                  <div class="team-bar-fill" style="width:${pct}%;background:${color}"></div>
-                </div>
-              </div>`;
-          }).join('')}
+          : memberPairs
+              .sort((a, b) => (b.mtd ?? b.full).percentage - (a.mtd ?? a.full).percentage)
+              .map((pair, i) => {
+                const m = pair.mtd ?? pair.full;
+                const pct = Math.min(m.percentage, 100);
+                const color = pct >= 50 ? '#10b981' : pct >= 35 ? '#f59e0b' : '#ef4444';
+                return `
+                  <div style="margin-bottom:14px">
+                    <div class="flex-between text-sm mb-8">
+                      <span class="text-muted">Mitglied ${i+1}</span>
+                      <span class="fw-bold" style="color:${color}">${m.percentage}%${pair.mtd ? ` <span style="font-size:11px;color:var(--text-muted);font-weight:400">/ ${pair.full.percentage}% Monat</span>` : ''}</span>
+                    </div>
+                    <div class="team-bar-bg">
+                      <div class="team-bar-fill" style="width:${pct}%;background:${color}"></div>
+                    </div>
+                  </div>`;
+              }).join('')}
         <div style="border-top:1px solid var(--border);margin-top:16px;padding-top:14px;display:flex;align-items:center;gap:8px">
           <div style="width:10px;height:3px;background:rgba(245,158,11,0.7);border-radius:2px"></div>
           <span class="text-xs text-muted">50%-Ziel</span>

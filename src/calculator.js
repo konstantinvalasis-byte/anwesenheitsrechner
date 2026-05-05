@@ -53,6 +53,8 @@ export function calculateMonthStats(entries, year, month, toDate = null, workDay
   const entryMap = {};
   (entries || []).forEach(e => {
     if (toDate && e.date > toDate) return;
+    const dow = new Date(e.date + 'T12:00:00').getDay();
+    if (!workDays.includes(dow)) return; // Eintrag auf Nicht-Arbeitstag ignorieren
     if (counts.hasOwnProperty(e.type)) {
       counts[e.type]++;
     }

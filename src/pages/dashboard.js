@@ -1,7 +1,7 @@
 import { supabase } from '../supabase.js';
 import { renderNavbar } from '../components/navbar.js';
 import { calculateMonthStats, DAY_TYPES } from '../calculator.js';
-import { getBWHolidays } from '../holidays.js';
+import { getBWHolidays, dateKey } from '../holidays.js';
 import { getMonthState, setMonthState } from '../monthState.js';
 
 const MONTH_NAMES = ['Januar','Februar','März','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember'];
@@ -62,7 +62,7 @@ async function loadData(profile) {
     .lte('date', endDate);
 
   const today = new Date();
-  const todayStr = today.toISOString().slice(0, 10);
+  const todayStr = dateKey(today);
   const isPastMonth = currentYear < today.getFullYear() ||
     (currentYear === today.getFullYear() && currentMonth < today.getMonth());
 

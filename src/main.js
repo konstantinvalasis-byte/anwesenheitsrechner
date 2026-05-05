@@ -4,8 +4,9 @@ import { renderLogin } from './pages/login.js';
 import { renderDashboard } from './pages/dashboard.js';
 import { renderCalendar } from './pages/calendar.js';
 import { renderTeam } from './pages/team.js';
-import { renderAdmin } from './pages/admin.js';
 import { renderSettings } from './pages/settings.js';
+import { renderTeamSetup } from './pages/team-setup.js';
+import { renderTeamManage } from './pages/team-manage.js';
 
 // Sofort Lade-Indikator — #app bleibt nie leer
 document.getElementById('app').innerHTML =
@@ -45,12 +46,19 @@ async function router() {
 
     if (seq !== renderSeq) return;
 
+    // Neuer User ohne Team → zum Onboarding
+    if (!currentProfile.team_id && hash !== 'team-setup') {
+      window.location.hash = '#/team-setup';
+      return;
+    }
+
     const routes = {
-      dashboard: () => renderDashboard(currentProfile),
-      calendar:  () => renderCalendar(currentProfile),
-      team:      () => renderTeam(currentProfile),
-      admin:     () => renderAdmin(currentProfile),
-      settings:  () => renderSettings(currentProfile),
+      dashboard:     () => renderDashboard(currentProfile),
+      calendar:      () => renderCalendar(currentProfile),
+      team:          () => renderTeam(currentProfile),
+      settings:      () => renderSettings(currentProfile),
+      'team-setup':  () => renderTeamSetup(currentProfile),
+      'team-manage': () => renderTeamManage(currentProfile),
     };
 
     await (routes[hash] || routes['dashboard'])();
