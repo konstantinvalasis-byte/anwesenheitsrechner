@@ -39,6 +39,10 @@ export async function renderTeam(prof) {
 async function loadTeam() {
   document.getElementById('month-display').textContent = `${MONTH_NAMES[currentMonth]} ${currentYear}`;
 
+  const today = new Date();
+  const isCurrentMonth = currentYear === today.getFullYear() && currentMonth === today.getMonth();
+  const todayStr = today.toISOString().slice(0, 10);
+
   // Aggregierte Tagestypen für die Balkenübersicht
   const { data: statsData, error } = await supabase.rpc('get_team_stats', {
     p_year: currentYear, p_month: currentMonth + 1
@@ -56,10 +60,6 @@ async function loadTeam() {
       <div class="alert alert-warning">⚠️ Team-Daten konnten nicht geladen werden. Bitte prüfe die Datenbankfunktionen.</div>`;
     return;
   }
-
-  const today = new Date();
-  const isCurrentMonth = currentYear === today.getFullYear() && currentMonth === today.getMonth();
-  const todayStr = today.toISOString().slice(0, 10);
 
   // calcMembers berechnet pro Mitglied anhand dessen work_days die korrekten Arbeitstage.
   // Für MTD werden office_days_mtd / absence_days_mtd aus der DB verwendet (datumsgefiltert),
