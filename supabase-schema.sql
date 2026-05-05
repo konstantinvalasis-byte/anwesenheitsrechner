@@ -99,14 +99,17 @@ $$;
 -- 9. Per-member anonymous raw counts (SECURITY DEFINER für RLS-Bypass – kein PII, nur Summen)
 -- Prozente werden client-seitig mit denselben Feiertagen wie das Dashboard berechnet.
 -- work_days wird mitgegeben damit der Client pro Mitglied korrekte Arbeitstage berechnen kann.
+-- p_today: optionales Datum für MTD-Filterung (nur Tage bis einschließlich p_today).
 -- Nur User mit exclude_from_team = FALSE werden berücksichtigt.
-CREATE OR REPLACE FUNCTION public.get_team_member_stats(p_year INT, p_month INT)
-RETURNS TABLE(office_days BIGINT, absence_days BIGINT, work_days INT[])
+CREATE OR REPLACE FUNCTION public.get_team_member_stats(p_year INT, p_month INT, p_today DATE DEFAULT NULL)
+RETURNS TABLE(office_days BIGINT, absence_days BIGINT, work_days INT[], office_days_mtd BIGINT, absence_days_mtd BIGINT)
 LANGUAGE sql SECURITY DEFINER SET search_path = public AS $$
   SELECT
-    COUNT(*) FILTER (WHERE a.type = 'OFFICE')::BIGINT                    AS office_days,
-    COUNT(*) FILTER (WHERE a.type IN ('VACATION','FLEX','SICK'))::BIGINT  AS absence_days,
-    COALESCE(p.work_days, ARRAY[1,2,3,4,5])                              AS work_days
+    COUNT(*) FILTER (WHERE a.type = 'OFFICE')::BIGINT                                                              AS office_days,
+    COUNT(*) FILTER (WHERE a.type IN ('VACATION','FLEX','SICK'))::BIGINT                                           AS absence_days,
+    COALESCE(p.work_days, ARRAY[1,2,3,4,5])                                                                       AS work_days,
+    COUNT(*) FILTER (WHERE a.type = 'OFFICE'                        AND (p_today IS NULL OR a.date <= p_today))::BIGINT AS office_days_mtd,
+    COUNT(*) FILTER (WHERE a.type IN ('VACATION','FLEX','SICK')     AND (p_today IS NULL OR a.date <= p_today))::BIGINT AS absence_days_mtd
   FROM attendance a
   JOIN profiles p ON p.id = a.member_id
   WHERE EXTRACT(YEAR  FROM a.date) = p_year

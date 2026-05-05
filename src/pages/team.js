@@ -44,9 +44,11 @@ async function loadTeam() {
     p_year: currentYear, p_month: currentMonth + 1
   });
 
-  // Pro-Mitglied anonyme Rohdaten (office + absence Tage)
+  // Pro-Mitglied anonyme Rohdaten (office + absence Tage, MTD-gefiltert wenn aktueller Monat)
   const { data: rawStats } = await supabase.rpc('get_team_member_stats', {
-    p_year: currentYear, p_month: currentMonth + 1
+    p_year: currentYear,
+    p_month: currentMonth + 1,
+    ...(isCurrentMonth ? { p_today: todayStr } : {}),
   });
 
   if (error) {
@@ -59,16 +61,21 @@ async function loadTeam() {
   const isCurrentMonth = currentYear === today.getFullYear() && currentMonth === today.getMonth();
   const todayStr = today.toISOString().slice(0, 10);
 
-  // calcMembers berechnet pro Mitglied anhand dessen work_days die korrekten Arbeitstage
+  // calcMembers berechnet pro Mitglied anhand dessen work_days die korrekten Arbeitstage.
+  // Für MTD werden office_days_mtd / absence_days_mtd aus der DB verwendet (datumsgefiltert),
+  // damit Nenner und Zähler denselben Zeitraum abdecken und keine > 100%-Werte entstehen.
   function calcMembers(isMTD) {
     return (rawStats || []).map(m => {
       const memberWorkDays = m.work_days || [1,2,3,4,5];
       const allMemberDays  = getWorkingDays(currentYear, currentMonth, memberWorkDays);
-      const memberTotal    = isMTD && isCurrentMonth
+      const useMTD = isMTD && isCurrentMonth;
+      const memberTotal = useMTD
         ? allMemberDays.filter(d => d <= todayStr).length
         : allMemberDays.length;
-      const net = Math.max(memberTotal - Number(m.absence_days), 0);
-      return { percentage: net > 0 ? Math.round(Number(m.office_days) / net * 100) : 0 };
+      const officeDays  = useMTD ? Number(m.office_days_mtd)  : Number(m.office_days);
+      const absenceDays = useMTD ? Number(m.absence_days_mtd) : Number(m.absence_days);
+      const net = Math.max(memberTotal - absenceDays, 0);
+      return { percentage: net > 0 ? Math.round(officeDays / net * 100) : 0 };
     });
   }
 
