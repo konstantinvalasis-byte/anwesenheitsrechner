@@ -8,11 +8,12 @@ export async function renderTeamManage(profile) {
     return;
   }
 
-  const [{ data: team, error }, { data: members }] = await Promise.all([
+  const [{ data: team, error }, { data: members, error: membersError }] = await Promise.all([
     supabase.from('teams').select('name, invite_code').eq('id', profile.team_id).single(),
     supabase.rpc('get_team_members'),
   ]);
 
+  if (membersError) console.error('[TeamManage] Mitglieder konnten nicht geladen werden:', membersError);
   const memberList = members || [];
 
   document.getElementById('app').innerHTML = `

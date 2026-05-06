@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Syne:wght@700;800&display=swap');
 
 :root {
   --bg-primary: #0a0f1e;
@@ -412,24 +412,174 @@ body {
 .form-error { font-size: 12px; color: var(--danger); }
 
 /* ── Login Page ── */
+/* ── Login / Landing Page ── */
 .login-page {
   min-height: 100vh;
+  display: grid;
+  grid-template-columns: 1fr 480px;
+}
+
+/* Hero Panel */
+.login-hero {
+  position: relative; overflow: hidden;
   display: flex; align-items: center; justify-content: center;
-  padding: 24px;
+  padding: 60px 48px;
+  border-right: 1px solid var(--border);
+}
+.login-hero-bg { position: absolute; inset: 0; pointer-events: none; }
+.hero-orb {
+  position: absolute; border-radius: 50%;
+  filter: blur(80px); opacity: 0.25;
+}
+.hero-orb-1 {
+  width: 500px; height: 500px; top: -120px; left: -120px;
+  background: radial-gradient(circle, #6366f1, transparent 70%);
+  animation: orbFloat1 12s ease-in-out infinite;
+}
+.hero-orb-2 {
+  width: 400px; height: 400px; bottom: -80px; right: -60px;
+  background: radial-gradient(circle, #10b981, transparent 70%);
+  animation: orbFloat2 15s ease-in-out infinite;
+}
+.hero-grid {
+  position: absolute; inset: 0;
+  background-image: linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+                    linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+  background-size: 40px 40px;
+  mask-image: radial-gradient(ellipse 80% 80% at 50% 50%, black 30%, transparent 100%);
+}
+@keyframes orbFloat1 {
+  0%,100% { transform: translate(0,0) scale(1); }
+  33% { transform: translate(30px,-20px) scale(1.05); }
+  66% { transform: translate(-20px,15px) scale(0.97); }
+}
+@keyframes orbFloat2 {
+  0%,100% { transform: translate(0,0) scale(1); }
+  40% { transform: translate(-25px,20px) scale(1.08); }
+  70% { transform: translate(15px,-10px) scale(0.95); }
+}
+
+.login-hero-content {
+  position: relative; z-index: 1;
+  max-width: 520px; width: 100%;
+}
+.login-brand {
+  display: flex; align-items: center; gap: 10px; margin-bottom: 40px;
+}
+.login-logo-sm {
+  width: 36px; height: 36px; font-size: 18px;
+  background: linear-gradient(135deg, var(--accent), var(--success));
+  border-radius: 10px; display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.login-brand-name {
+  font-size: 14px; font-weight: 600; color: var(--text-secondary); letter-spacing: 0.02em;
+}
+.login-headline {
+  font-family: 'Syne', sans-serif;
+  font-size: clamp(32px, 4vw, 52px);
+  font-weight: 800; line-height: 1.1;
+  color: var(--text-primary);
+  margin-bottom: 20px;
+  letter-spacing: -0.02em;
+}
+.login-headline em {
+  font-style: normal;
+  background: linear-gradient(135deg, var(--accent-light), var(--success));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+}
+.login-hero-sub {
+  font-size: 15px; color: var(--text-secondary);
+  line-height: 1.7; margin-bottom: 32px; max-width: 420px;
+}
+.login-features {
+  list-style: none; display: flex; flex-direction: column; gap: 12px; margin-bottom: 40px;
+}
+.login-features li {
+  display: flex; align-items: center; gap: 10px;
+  font-size: 14px; color: var(--text-secondary);
+}
+.feat-check {
+  display: flex; align-items: center; justify-content: center;
+  width: 20px; height: 20px; border-radius: 50%;
+  background: rgba(16,185,129,0.15); color: var(--success);
+  font-size: 11px; font-weight: 700; flex-shrink: 0;
+}
+
+/* Mini Preview Card */
+.login-preview { display: flex; flex-direction: column; gap: 8px; }
+.preview-label {
+  font-size: 11px; font-weight: 600; letter-spacing: 0.1em;
+  color: var(--text-muted); text-transform: uppercase;
+}
+.preview-card {
+  display: flex; align-items: center; gap: 24px;
+  background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 16px; padding: 20px 24px;
+  backdrop-filter: blur(12px);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.4), 0 0 0 1px rgba(99,102,241,0.1);
+  position: relative; overflow: hidden;
+}
+.preview-card::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(99,102,241,0.5), transparent);
+}
+.preview-ring-wrap {
+  position: relative; width: 80px; height: 80px; flex-shrink: 0;
+}
+.preview-ring { width: 80px; height: 80px; }
+.preview-ring-fill {
+  stroke-dasharray: 188.5;
+  stroke-dashoffset: 188.5;
+  animation: ringFill 1.4s 0.6s cubic-bezier(0.4,0,0.2,1) forwards;
+}
+@keyframes ringFill {
+  to { stroke-dashoffset: 84.8; }
+}
+.preview-ring-pct {
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 15px; font-weight: 800; color: var(--text-primary);
+}
+.preview-stats {
+  display: flex; flex-direction: column; gap: 10px; flex: 1;
+}
+.preview-stat {
+  display: flex; align-items: center; gap: 10px;
+}
+.ps-num {
+  font-size: 18px; font-weight: 800; color: var(--text-primary);
+  min-width: 28px;
+}
+.ps-lbl { font-size: 11px; color: var(--text-muted); }
+.ps-ok .ps-num { color: var(--success); font-size: 16px; }
+.ps-ok .ps-lbl { color: var(--success); opacity: 0.8; }
+.preview-badge {
+  position: absolute; top: 12px; right: 14px;
+  font-size: 10px; font-weight: 600; letter-spacing: 0.06em;
+  color: var(--accent-light); background: rgba(99,102,241,0.12);
+  border-radius: 20px; padding: 3px 9px;
+}
+
+/* Form Panel */
+.login-form-panel {
+  display: flex; align-items: center; justify-content: center;
+  padding: 48px 40px;
+  background: rgba(10,15,30,0.6);
 }
 .login-card {
   background: rgba(255,255,255,0.03); border: 1px solid var(--border);
-  border-radius: 24px; padding: 40px; width: 100%; max-width: 420px;
+  border-radius: 24px; padding: 40px; width: 100%; max-width: 400px;
   backdrop-filter: blur(20px); box-shadow: var(--shadow-lg);
 }
 .login-logo {
-  width: 56px; height: 56px;
+  width: 52px; height: 52px;
   background: linear-gradient(135deg, var(--accent), var(--success));
-  border-radius: 16px; display: flex; align-items: center; justify-content: center;
-  font-size: 28px; margin-bottom: 20px;
+  border-radius: 14px; display: flex; align-items: center; justify-content: center;
+  font-size: 26px; margin-bottom: 18px;
 }
-.login-title { font-size: 26px; font-weight: 800; margin-bottom: 6px; }
-.login-subtitle { color: var(--text-secondary); font-size: 14px; margin-bottom: 28px; }
+.login-title { font-size: 22px; font-weight: 800; margin-bottom: 4px; }
+.login-subtitle { color: var(--text-secondary); font-size: 13px; margin-bottom: 24px; }
 .login-tabs { display: flex; gap: 4px; background: var(--bg-card); border-radius: 10px; padding: 4px; margin-bottom: 24px; }
 .login-tab {
   flex: 1; padding: 8px; border-radius: 8px;
@@ -437,6 +587,19 @@ body {
   font-size: 14px; font-weight: 600; cursor: pointer; transition: var(--transition); font-family: inherit;
 }
 .login-tab.active { background: var(--accent); color: white; }
+
+/* Mobile: Stack vertically */
+@media (max-width: 900px) {
+  .login-page { grid-template-columns: 1fr; grid-template-rows: auto 1fr; }
+  .login-hero {
+    border-right: none; border-bottom: 1px solid var(--border);
+    padding: 40px 24px 32px;
+  }
+  .login-headline { font-size: 28px; }
+  .login-preview { display: none; }
+  .login-form-panel { padding: 32px 20px; }
+  .login-card { padding: 28px 24px; }
+}
 
 /* ── Team Stats ── */
 .team-stat-row {
@@ -578,4 +741,29 @@ body {
 }
 .workday-toggle input { display: none; }
 .workday-toggle:hover { border-color: var(--accent); color: var(--text-primary); }
+
+/* ── App Footer ── */
+.app-footer {
+  display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;
+  padding: 14px 24px;
+  border-top: 1px solid var(--border);
+  background: rgba(10,15,30,0.7);
+  backdrop-filter: blur(12px);
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-bottom: 70px; /* Platz für Bottom-Nav auf Mobile */
+}
+.app-footer-copy { opacity: 0.7; }
+.app-footer-links { display: flex; align-items: center; gap: 10px; }
+.app-footer-links a {
+  color: var(--text-muted);
+  text-decoration: none;
+  transition: color 0.15s;
+}
+.app-footer-links a:hover { color: var(--accent-light); }
+.app-footer-sep { opacity: 0.4; }
+
+@media (min-width: 768px) {
+  .app-footer { margin-bottom: 0; }
+}
 .workday-toggle.active { background: rgba(99,102,241,0.2); border-color: var(--accent); color: var(--accent-light); }

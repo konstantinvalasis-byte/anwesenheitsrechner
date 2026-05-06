@@ -233,7 +233,7 @@ window.setDayType = async function(dateStr, type) {
     member_id: profile.id, date: dateStr, type
   }, { onConflict: 'member_id,date' });
 
-  if (error) { showToast('❌ Fehler beim Speichern', 'error'); return; }
+  if (error) { document.querySelectorAll('.type-btn').forEach(b => b.disabled = false); showToast('❌ Fehler beim Speichern', 'error'); return; }
 
   const idx = entries.findIndex(e => e.date === dateStr);
   if (idx >= 0) entries[idx].type = type; else entries.push({ date: dateStr, type });

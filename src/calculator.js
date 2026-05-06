@@ -75,7 +75,7 @@ export function calculateMonthStats(entries, year, month, toDate = null, workDay
   const percentage = netWorkingDays > 0 ? (actualDays / netWorkingDays) * 100 : 0;
 
   // Met target?
-  const targetMet = actualDays >= requiredDays;
+  const targetMet = netWorkingDays > 0 && actualDays >= requiredDays;
 
   return {
     totalWorkingDays,
