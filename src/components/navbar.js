@@ -41,9 +41,9 @@ export function renderNavbar(profile, activePage) {
   footer.innerHTML = `
     <span class="app-footer-copy">© ${new Date().getFullYear()} Anwesenheitsrechner</span>
     <div class="app-footer-links">
-      <a href="docs/praesentation.html" target="_blank" rel="noopener">📊 Präsentation</a>
+      <a href="/docs/praesentation.html" target="_blank" rel="noopener">📊 Präsentation</a>
       <span class="app-footer-sep">·</span>
-      <a href="docs/schulung.html" target="_blank" rel="noopener">📖 Schulungsunterlage</a>
+      <a href="/docs/schulung.html" target="_blank" rel="noopener">📖 Schulungsunterlage</a>
     </div>
   `;
 

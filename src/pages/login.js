@@ -27,6 +27,28 @@ export function renderLogin() {
             <li><span class="feat-check">✓</span>Anonyme Team-Übersicht ohne Datenschutzrisiko</li>
             <li><span class="feat-check">✓</span>Teilzeit &amp; individuelle Arbeitstage unterstützt</li>
           </ul>
+          <div class="login-resources">
+            <div class="preview-label">Ressourcen</div>
+            <div class="login-resource-links">
+              <a href="/docs/praesentation.html" target="_blank" class="resource-link resource-link-pres">
+                <span class="resource-icon">🎯</span>
+                <span class="resource-text">
+                  <span class="resource-title">Präsentation</span>
+                  <span class="resource-sub">Für die Team-Einführung</span>
+                </span>
+                <span class="resource-arrow">↗</span>
+              </a>
+              <a href="/docs/schulung.html" target="_blank" class="resource-link resource-link-schulung">
+                <span class="resource-icon">📖</span>
+                <span class="resource-text">
+                  <span class="resource-title">Schulungsunterlage</span>
+                  <span class="resource-sub">Schritt-für-Schritt-Guide</span>
+                </span>
+                <span class="resource-arrow">↗</span>
+              </a>
+            </div>
+          </div>
+
           <div class="login-preview">
             <div class="preview-label">Live-Vorschau</div>
             <div class="preview-card">

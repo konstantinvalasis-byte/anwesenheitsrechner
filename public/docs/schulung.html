@@ -1,0 +1,1433 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Anwesenheitsrechner — Schulungsunterlage</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;1,400&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --primary:   #6366f1;
+  --primary-bg:rgba(99,102,241,0.08);
+  --primary-border:rgba(99,102,241,0.25);
+  --gold:      #C8A84B;
+  --gold-bg:   rgba(200,168,75,0.08);
+  --green:     #10B981;
+  --green-bg:  rgba(16,185,129,0.08);
+  --amber:     #F59E0B;
+  --amber-bg:  rgba(245,158,11,0.1);
+  --red:       #EF4444;
+  --red-bg:    rgba(239,68,68,0.08);
+  --purple:    #8B5CF6;
+  --cyan:      #06B6D4;
+  --slate:     #64748b;
+  /* App dark colors for mockups */
+  --app-bg:    #0f1117;
+  --app-bg2:   #1a1d27;
+  --app-bg3:   #20243a;
+  --app-border:rgba(255,255,255,0.08);
+  --app-text:  #e2e8f0;
+  --app-muted: rgba(226,232,240,0.45);
+  /* Doc colors */
+  --bg:        #FAFAF8;
+  --text:      #1a1a2e;
+  --muted:     #64748b;
+  --border:    #E2E8F0;
+  --card-bg:   #FFFFFF;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+
+html { scroll-behavior:smooth; }
+
+body {
+  background:var(--bg);
+  color:var(--text);
+  font-family:'DM Sans', sans-serif;
+  font-size:16px;
+  line-height:1.7;
+  -webkit-font-smoothing:antialiased;
+}
+
+/* ─── Layout ──────────────────────────────── */
+.page-wrap {
+  max-width:900px;
+  margin:0 auto;
+  padding:0 32px 80px;
+}
+
+/* ─── Cover ───────────────────────────────── */
+.cover {
+  background:var(--app-bg);
+  color:#fff;
+  padding:80px 72px;
+  margin-bottom:0;
+  position:relative;
+  overflow:hidden;
+}
+.cover::before {
+  content:'';
+  position:absolute; inset:0;
+  background-image:radial-gradient(circle, rgba(200,168,75,0.08) 1px, transparent 1px);
+  background-size:32px 32px;
+}
+.cover::after {
+  content:'';
+  position:absolute; top:-200px; right:-200px;
+  width:600px; height:600px; border-radius:50%;
+  border:1px solid rgba(200,168,75,0.08);
+  pointer-events:none;
+}
+.cover-inner { position:relative; z-index:1; }
+.cover-tag {
+  display:inline-flex; align-items:center; gap:8px;
+  background:rgba(200,168,75,0.15);
+  border:1px solid rgba(200,168,75,0.3);
+  color:#C8A84B; border-radius:100px;
+  padding:4px 14px; font-size:11px; font-weight:600;
+  letter-spacing:.12em; text-transform:uppercase;
+  margin-bottom:24px;
+}
+.cover h1 {
+  font-family:'Lora', serif;
+  font-size:clamp(36px,5vw,56px);
+  font-weight:600; line-height:1.1;
+  margin-bottom:16px;
+}
+.cover h1 span { color:#C8A84B; }
+.cover-sub {
+  font-size:17px; font-weight:300;
+  color:rgba(255,255,255,0.6);
+  max-width:560px; line-height:1.6;
+  margin-bottom:40px;
+}
+.cover-meta {
+  display:flex; gap:32px; flex-wrap:wrap;
+  border-top:1px solid rgba(255,255,255,0.08);
+  padding-top:24px;
+}
+.cover-meta-item { display:flex; flex-direction:column; gap:2px; }
+.cover-meta-item .lbl { font-size:10px; letter-spacing:.15em; text-transform:uppercase; color:rgba(255,255,255,0.35); }
+.cover-meta-item .val { font-size:14px; font-weight:500; }
+
+/* ─── TOC ─────────────────────────────────── */
+.toc-wrap {
+  background:var(--card-bg);
+  border:1px solid var(--border);
+  border-left:4px solid var(--primary);
+  border-radius:12px;
+  padding:28px 32px;
+  margin:40px 0;
+}
+.toc-wrap h2 { font-size:14px; font-weight:600; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); margin-bottom:16px; }
+.toc-grid { display:grid; grid-template-columns:1fr 1fr; gap:6px 32px; }
+.toc-item {
+  display:flex; align-items:center; gap:10px;
+  font-size:14px; text-decoration:none; color:var(--text);
+  padding:4px 0;
+  border-bottom:1px solid var(--border);
+  transition:color .15s;
+}
+.toc-item:hover { color:var(--primary); }
+.toc-num { font-family:'Space Mono',monospace; font-size:11px; color:var(--muted); min-width:20px; }
+
+/* ─── Sections ────────────────────────────── */
+.section {
+  margin-top:64px;
+  padding-top:0;
+}
+.section-header {
+  display:flex; align-items:flex-start; gap:16px;
+  margin-bottom:28px;
+  padding-bottom:20px;
+  border-bottom:2px solid var(--border);
+}
+.section-num {
+  width:40px; height:40px; border-radius:10px; flex-shrink:0;
+  background:var(--primary);
+  color:#fff; display:flex; align-items:center; justify-content:center;
+  font-family:'Space Mono',monospace; font-size:13px; font-weight:700;
+}
+.section-title-wrap h2 {
+  font-family:'Lora', serif;
+  font-size:26px; font-weight:600; line-height:1.2;
+  margin-bottom:4px;
+}
+.section-title-wrap p { font-size:14px; color:var(--muted); }
+
+/* ─── Step blocks ─────────────────────────── */
+.steps { display:flex; flex-direction:column; gap:0; margin:24px 0; }
+.step {
+  display:flex; gap:0;
+  position:relative;
+}
+.step-left {
+  display:flex; flex-direction:column; align-items:center;
+  margin-right:20px; flex-shrink:0;
+}
+.step-circle {
+  width:36px; height:36px; border-radius:50%;
+  background:var(--primary-bg);
+  border:2px solid var(--primary);
+  color:var(--primary);
+  display:flex; align-items:center; justify-content:center;
+  font-weight:700; font-size:13px; flex-shrink:0;
+  z-index:1;
+}
+.step-line {
+  width:2px; background:linear-gradient(180deg,var(--primary-border),transparent);
+  flex:1; margin-top:4px;
+}
+.step:last-child .step-line { display:none; }
+.step-body { padding-bottom:28px; flex:1; }
+.step-body h4 { font-size:16px; font-weight:600; margin-bottom:6px; margin-top:6px; }
+.step-body p { font-size:14px; color:var(--muted); line-height:1.6; }
+.step-body ul { font-size:14px; color:var(--muted); padding-left:20px; line-height:1.8; }
+
+/* ─── Callout boxes ───────────────────────── */
+.callout {
+  display:flex; gap:12px; align-items:flex-start;
+  padding:14px 18px; border-radius:10px;
+  margin:16px 0; font-size:14px; line-height:1.6;
+}
+.callout-icon { font-size:18px; flex-shrink:0; margin-top:1px; }
+.callout-tip  { background:var(--primary-bg); border:1px solid var(--primary-border); }
+.callout-warn { background:var(--amber-bg); border:1px solid rgba(245,158,11,0.25); }
+.callout-info { background:var(--green-bg); border:1px solid rgba(16,185,129,0.2); }
+.callout-note { background:#F8F4FF; border:1px solid rgba(139,92,246,0.2); }
+
+/* ─── App Mockup Base ─────────────────────── */
+.mockup {
+  background:var(--app-bg);
+  border-radius:16px;
+  overflow:hidden;
+  margin:20px 0;
+  box-shadow:0 20px 60px rgba(0,0,0,0.25), 0 0 0 1px rgba(255,255,255,0.06);
+}
+.mockup-bar {
+  background:rgba(255,255,255,0.04);
+  border-bottom:1px solid var(--app-border);
+  padding:12px 20px;
+  display:flex; align-items:center; gap:8px;
+}
+.mockup-dot { width:10px; height:10px; border-radius:50%; }
+.mockup-title {
+  font-size:12px; font-weight:500; color:var(--app-muted);
+  margin-left:8px; font-family:'Space Mono',monospace;
+}
+.mockup-body { padding:20px; }
+
+/* ─── Mockup: Navbar ──────────────────────── */
+.app-navbar {
+  background:rgba(255,255,255,0.04);
+  border-bottom:1px solid var(--app-border);
+  padding:0 20px;
+  display:flex; align-items:center; gap:4px;
+  height:52px;
+}
+.app-nav-brand {
+  font-weight:700; font-size:14px; color:var(--app-text);
+  margin-right:auto;
+}
+.app-nav-link {
+  padding:6px 12px; border-radius:8px; font-size:13px; color:var(--app-muted);
+  display:flex; align-items:center; gap:5px;
+}
+.app-nav-link.active {
+  background:var(--primary-bg);
+  color:#818CF8; border:1px solid rgba(99,102,241,0.2);
+}
+
+/* ─── Mockup: Login ───────────────────────── */
+.m-login { max-width:380px; margin:0 auto; padding:32px 0; }
+.m-form-group { margin-bottom:16px; }
+.m-label { display:block; font-size:12px; font-weight:500; color:var(--app-muted); margin-bottom:6px; }
+.m-input {
+  width:100%; padding:11px 14px; border-radius:8px;
+  background:var(--app-bg2); border:1px solid var(--app-border);
+  color:var(--app-text); font-size:14px;
+}
+.m-btn {
+  width:100%; padding:12px; border-radius:10px; border:none;
+  font-size:14px; font-weight:600; cursor:pointer;
+  display:flex; align-items:center; justify-content:center; gap:8px;
+}
+.m-btn-primary { background:var(--primary); color:#fff; }
+.m-btn-ghost {
+  background:transparent; color:var(--app-muted);
+  border:1px solid var(--app-border);
+}
+.m-tabs {
+  display:flex; background:var(--app-bg2); border-radius:10px; padding:4px; margin-bottom:24px;
+}
+.m-tab {
+  flex:1; padding:8px; border-radius:8px; text-align:center; font-size:13px; font-weight:500; color:var(--app-muted);
+}
+.m-tab.active { background:var(--app-bg3); color:var(--app-text); }
+
+/* ─── Mockup: Dashboard ───────────────────── */
+.m-progress-ring { display:flex; align-items:center; justify-content:center; padding:20px 0; }
+.m-stats-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-bottom:12px; }
+.m-stat-card {
+  background:var(--app-bg2); border:1px solid var(--app-border); border-radius:10px;
+  padding:14px 12px; text-align:center;
+}
+.m-stat-icon { font-size:16px; margin-bottom:4px; }
+.m-stat-val { font-size:20px; font-weight:700; line-height:1.1; }
+.m-stat-lbl { font-size:10px; color:var(--app-muted); margin-top:2px; }
+
+/* ─── Mockup: Calendar ────────────────────── */
+.m-cal { display:grid; grid-template-columns:repeat(7,1fr); gap:3px; }
+.m-cal-hdr { font-size:9px; text-align:center; color:var(--app-muted); padding:4px 0; }
+.m-cal-day {
+  aspect-ratio:1; border-radius:5px;
+  display:flex; align-items:center; justify-content:center;
+  font-size:9px; font-weight:500;
+}
+.m-cal-empty { }
+.m-cal-wknd { color:rgba(255,255,255,0.15); background:rgba(255,255,255,0.02); }
+.m-cal-none { background:var(--app-bg2); color:var(--app-muted); }
+.m-cal-office { background:rgba(99,102,241,0.3); color:#818CF8; border:1px solid rgba(99,102,241,0.4); }
+.m-cal-remote { background:rgba(100,116,139,0.3); color:#94A3B8; }
+.m-cal-vacation { background:rgba(245,158,11,0.25); color:#FCD34D; }
+.m-cal-holiday { background:rgba(139,92,246,0.25); color:#A78BFA; }
+.m-cal-sick { background:rgba(239,68,68,0.2); color:#FCA5A5; }
+.m-cal-flex { background:rgba(6,182,212,0.2); color:#67E8F9; }
+.m-cal-today { box-shadow:0 0 0 2px #C8A84B; }
+
+/* ─── Mockup: Modal ───────────────────────── */
+.m-modal {
+  background:var(--app-bg2); border:1px solid var(--app-border);
+  border-radius:14px; padding:20px; margin-top:12px;
+}
+.m-modal-title { font-size:14px; font-weight:600; color:var(--app-text); margin-bottom:14px; text-align:center; }
+.m-type-btns { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+.m-type-btn {
+  padding:10px 8px; border-radius:8px; border:1px solid;
+  font-size:12px; font-weight:500; text-align:center;
+  display:flex; flex-direction:column; align-items:center; gap:3px;
+}
+
+/* ─── Mockup: Team Setup ──────────────────── */
+.m-code-display {
+  background:var(--app-bg2); border:1px solid var(--app-border);
+  border-radius:10px; padding:14px 18px;
+  font-family:'Space Mono',monospace; font-size:22px; font-weight:700;
+  letter-spacing:.2em; color:var(--app-text); text-align:center;
+}
+.m-setup-options { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin:16px 0; }
+.m-setup-opt {
+  background:var(--app-bg2); border:2px solid var(--app-border);
+  border-radius:12px; padding:20px 16px; text-align:center;
+  cursor:pointer;
+}
+.m-setup-opt.selected { border-color:var(--primary); background:var(--primary-bg); }
+.m-setup-opt-icon { font-size:28px; margin-bottom:8px; }
+.m-setup-opt-title { font-size:13px; font-weight:600; color:var(--app-text); margin-bottom:4px; }
+.m-setup-opt-desc { font-size:11px; color:var(--app-muted); }
+
+/* ─── Mockup: Settings ────────────────────── */
+.m-workday-row { display:flex; gap:6px; flex-wrap:wrap; margin:12px 0; }
+.m-wd-toggle {
+  padding:8px 14px; border-radius:8px; border:1px solid var(--app-border);
+  font-size:12px; font-weight:600; color:var(--app-muted);
+  background:var(--app-bg2);
+}
+.m-wd-toggle.active { background:var(--primary-bg); border-color:var(--primary); color:#818CF8; }
+.m-toggle-row {
+  display:flex; align-items:center; justify-content:space-between;
+  padding:12px 0; border-bottom:1px solid var(--app-border);
+}
+.m-toggle-row:last-child { border-bottom:none; }
+.m-toggle-knob {
+  width:44px; height:24px; border-radius:12px; background:var(--app-bg3);
+  border:1px solid var(--app-border); position:relative; cursor:pointer;
+  display:flex; align-items:center; padding:2px;
+}
+.m-toggle-knob .knob {
+  width:18px; height:18px; border-radius:50%; background:var(--app-muted);
+  transition:transform .2s;
+}
+.m-toggle-knob.on { background:var(--primary); }
+.m-toggle-knob.on .knob { transform:translateX(20px); background:#fff; }
+
+/* ─── Mockup: Team view ───────────────────── */
+.m-bar-row { margin-bottom:10px; }
+.m-bar-hdr { display:flex; justify-content:space-between; font-size:11px; margin-bottom:4px; color:var(--app-muted); }
+.m-bar-bg { height:5px; border-radius:3px; background:var(--app-bg3); overflow:hidden; }
+.m-bar-fill { height:100%; border-radius:3px; }
+
+/* ─── Day type pills ──────────────────────── */
+.day-type-grid {
+  display:grid; grid-template-columns:repeat(auto-fill, minmax(160px,1fr));
+  gap:12px; margin:16px 0;
+}
+.day-type-card {
+  border-radius:10px; padding:14px 16px;
+  border:1px solid;
+}
+.day-type-card .emoji { font-size:20px; margin-bottom:6px; }
+.day-type-card .name { font-size:14px; font-weight:600; margin-bottom:4px; }
+.day-type-card .desc { font-size:12px; opacity:.7; line-height:1.5; }
+
+/* ─── FAQ ─────────────────────────────────── */
+.faq-item { border-bottom:1px solid var(--border); padding:16px 0; }
+.faq-q { font-size:15px; font-weight:600; margin-bottom:6px; display:flex; align-items:flex-start; gap:10px; }
+.faq-q::before { content:'Q'; font-family:'Space Mono',monospace; font-size:11px; color:var(--primary); margin-top:3px; flex-shrink:0; }
+.faq-a { font-size:14px; color:var(--muted); line-height:1.6; padding-left:22px; }
+
+/* ─── Tag / Badge ─────────────────────────── */
+.tag {
+  display:inline-flex; align-items:center; gap:5px;
+  padding:3px 10px; border-radius:100px;
+  font-size:12px; font-weight:500; border:1px solid;
+}
+.tag-green { background:var(--green-bg); border-color:rgba(16,185,129,0.25); color:var(--green); }
+.tag-blue  { background:var(--primary-bg); border-color:var(--primary-border); color:var(--primary); }
+.tag-amber { background:var(--amber-bg); border-color:rgba(245,158,11,0.25); color:var(--amber); }
+.tag-red   { background:var(--red-bg); border-color:rgba(239,68,68,0.2); color:var(--red); }
+
+/* ─── Misc ────────────────────────────────── */
+h3 { font-family:'Lora',serif; font-size:19px; font-weight:600; margin:24px 0 12px; }
+p { margin-bottom:12px; }
+p:last-child { margin-bottom:0; }
+.text-muted { color:var(--muted); }
+.mt-16 { margin-top:16px; }
+.mt-24 { margin-top:24px; }
+.mb-8  { margin-bottom:8px; }
+.mb-12 { margin-bottom:12px; }
+.mb-16 { margin-bottom:16px; }
+.flex  { display:flex; }
+.gap-8 { gap:8px; }
+.gap-12 { gap:12px; }
+.items-center { align-items:center; }
+.flex-wrap { flex-wrap:wrap; }
+hr { border:none; border-top:1px solid var(--border); margin:40px 0; }
+
+@media print {
+  .cover { background:#1a1a2e !important; -webkit-print-color-adjust:exact; }
+  .mockup { box-shadow:0 2px 12px rgba(0,0,0,0.15) !important; }
+  .section { break-inside:avoid; }
+}
+@media (max-width:640px) {
+  .page-wrap { padding:0 16px 60px; }
+  .cover { padding:48px 24px; }
+  .toc-grid { grid-template-columns:1fr; }
+  .m-setup-options { grid-template-columns:1fr; }
+  .m-stats-grid { grid-template-columns:1fr 1fr; }
+}
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════
+     COVER
+══════════════════════════════════════════ -->
+<div class="cover">
+  <div class="cover-inner">
+    <div class="cover-tag">📋 Schulungsunterlage</div>
+    <h1>Anwesenheits<span>rechner</span><br>— Benutzerhandbuch</h1>
+    <p class="cover-sub">Schritt-für-Schritt-Anleitung zur Nutzung des Anwesenheitstools für hybrides Arbeiten — von der Registrierung bis zur täglichen Pflege.</p>
+    <div class="cover-meta">
+      <div class="cover-meta-item">
+        <span class="lbl">Version</span>
+        <span class="val">1.0</span>
+      </div>
+      <div class="cover-meta-item">
+        <span class="lbl">Zielgruppe</span>
+        <span class="val">Alle Mitarbeiter</span>
+      </div>
+      <div class="cover-meta-item">
+        <span class="lbl">Geschätzte Lesezeit</span>
+        <span class="val">15 Minuten</span>
+      </div>
+      <div class="cover-meta-item">
+        <span class="lbl">Stand</span>
+        <span class="val">Mai 2025</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="page-wrap">
+
+<!-- ── TOC ───────────────────────────────── -->
+<div class="toc-wrap">
+  <h2>Inhalt</h2>
+  <div class="toc-grid">
+    <a href="#s1" class="toc-item"><span class="toc-num">01</span>Was ist der Anwesenheitsrechner?</a>
+    <a href="#s5" class="toc-item"><span class="toc-num">05</span>Kalender — Tage eintragen</a>
+    <a href="#s2" class="toc-item"><span class="toc-num">02</span>Registrierung &amp; Anmeldung</a>
+    <a href="#s6" class="toc-item"><span class="toc-num">06</span>Tagestypen im Detail</a>
+    <a href="#s3" class="toc-item"><span class="toc-num">03</span>Team erstellen oder beitreten</a>
+    <a href="#s7" class="toc-item"><span class="toc-num">07</span>Team-Übersicht verstehen</a>
+    <a href="#s4" class="toc-item"><span class="toc-num">04</span>Dashboard verstehen</a>
+    <a href="#s8" class="toc-item"><span class="toc-num">08</span>Einstellungen anpassen</a>
+    <a href="#s9" class="toc-item" style="grid-column:1/-1"><span class="toc-num">09</span>Häufige Fragen (FAQ)</a>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     SECTION 1 — WAS IST DER ANWESENHEITSRECHNER
+════════════════════════════════════════ -->
+<div class="section" id="s1">
+  <div class="section-header">
+    <div class="section-num">01</div>
+    <div class="section-title-wrap">
+      <h2>Was ist der Anwesenheitsrechner?</h2>
+      <p>Überblick, Zweck und Funktionsweise</p>
+    </div>
+  </div>
+
+  <p>Der <strong>Anwesenheitsrechner</strong> ist ein Web-Tool, das die Büropräsenz im hybriden Arbeitsmodell automatisch verfolgt und auswertet. Er hilft jedem Mitarbeiter dabei, die <strong>50%-Büropräsenz-Vorgabe</strong> einzuhalten — ohne manuelle Excel-Tabellen oder aufwändige Nachverfolgung.</p>
+
+  <h3>Was das Tool leistet</h3>
+  <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin:16px 0;">
+    <div style="padding:16px; border:1px solid var(--border); border-radius:10px; background:var(--card-bg)">
+      <div style="font-size:20px; margin-bottom:8px">📊</div>
+      <strong style="font-size:14px">Persönliche Auswertung</strong>
+      <p style="font-size:13px; color:var(--muted); margin-top:4px">Anwesenheitsquote, benötigte Resttage und vollständige Monatsübersicht auf einen Blick.</p>
+    </div>
+    <div style="padding:16px; border:1px solid var(--border); border-radius:10px; background:var(--card-bg)">
+      <div style="font-size:20px; margin-bottom:8px">📅</div>
+      <strong style="font-size:14px">Einfache Erfassung</strong>
+      <p style="font-size:13px; color:var(--muted); margin-top:4px">Einen Tag per Klick eintragen: Büro, Mobil, Urlaub, Gleittag oder Krank.</p>
+    </div>
+    <div style="padding:16px; border:1px solid var(--border); border-radius:10px; background:var(--card-bg)">
+      <div style="font-size:20px; margin-bottom:8px">👥</div>
+      <strong style="font-size:14px">Team-Transparenz</strong>
+      <p style="font-size:13px; color:var(--muted); margin-top:4px">Anonyme Teamstatistiken zeigen, ob das Team die Zielvorgabe erfüllt — ohne Einzeleinsicht.</p>
+    </div>
+    <div style="padding:16px; border:1px solid var(--border); border-radius:10px; background:var(--card-bg)">
+      <div style="font-size:20px; margin-bottom:8px">🎉</div>
+      <strong style="font-size:14px">Feiertage & Schulferien</strong>
+      <p style="font-size:13px; color:var(--muted); margin-top:4px">Alle Feiertage in Baden-Württemberg werden automatisch erkannt und korrekt verrechnet.</p>
+    </div>
+  </div>
+
+  <h3>Die Formel im Überblick</h3>
+  <p>Die Anwesenheitsquote berechnet sich fair — Urlaub, Krankheit und Feiertage werden herausgerechnet:</p>
+  <div style="background:var(--app-bg); color:var(--app-text); border-radius:12px; padding:20px 24px; font-family:'Space Mono',monospace; font-size:13px; line-height:2; margin:16px 0;">
+    <div style="color:rgba(226,232,240,0.45); font-size:11px; margin-bottom:8px">BERECHNUNG DER ANWESENHEITSQUOTE</div>
+    <div>Arbeitstage (Mo–Fr) <span style="color:#C8A84B">= 22</span></div>
+    <div>− Feiertage <span style="color:#C8A84B">= −1</span></div>
+    <div style="border-top:1px solid rgba(255,255,255,0.08); margin:6px 0"></div>
+    <div>Netto-Arbeitstage <span style="color:#C8A84B">= 21</span></div>
+    <div>− Urlaub / Gleittag / Krank <span style="color:#C8A84B">= −5</span></div>
+    <div style="border-top:1px solid rgba(255,255,255,0.08); margin:6px 0"></div>
+    <div>Pflicht-Arbeitstage <span style="color:#C8A84B">= 16</span></div>
+    <div>Bürotage <span style="color:#C8A84B">= 9</span></div>
+    <div style="border-top:2px solid rgba(200,168,75,0.4); margin:8px 0"></div>
+    <div>Quote = 9 ÷ 16 × 100 <span style="color:#10B981; font-weight:700">= 56,25 % ✓</span></div>
+  </div>
+  <div class="callout callout-info">
+    <span class="callout-icon">✅</span>
+    <div><strong>Ergebnis:</strong> Wer 9 von 16 relevanten Arbeitstagen im Büro war, hat das 50%-Ziel erfüllt — auch wenn im Monat insgesamt 22 Werktage lagen.</div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     SECTION 2 — REGISTRIERUNG
+════════════════════════════════════════ -->
+<div class="section" id="s2">
+  <div class="section-header">
+    <div class="section-num">02</div>
+    <div class="section-title-wrap">
+      <h2>Registrierung &amp; Anmeldung</h2>
+      <p>Konto anlegen und einloggen</p>
+    </div>
+  </div>
+
+  <p>Die Registrierung dauert weniger als eine Minute. Du brauchst nur eine E-Mail-Adresse und ein Passwort.</p>
+
+  <!-- Login Mockup -->
+  <div class="mockup">
+    <div class="mockup-bar">
+      <div class="mockup-dot" style="background:#EF4444"></div>
+      <div class="mockup-dot" style="background:#F59E0B"></div>
+      <div class="mockup-dot" style="background:#10B981"></div>
+      <span class="mockup-title">anwesenheitsrechner.app</span>
+    </div>
+    <div class="mockup-body">
+      <div class="m-login">
+        <div style="text-align:center; margin-bottom:24px;">
+          <div style="font-size:24px; font-weight:700; color:var(--app-text)">Anwesenheitsrechner</div>
+          <div style="font-size:13px; color:var(--app-muted); margin-top:4px">Hybrid Work. Einfach im Griff.</div>
+        </div>
+        <div class="m-tabs">
+          <div class="m-tab">Anmelden</div>
+          <div class="m-tab active">Konto erstellen</div>
+        </div>
+        <div class="m-form-group">
+          <label class="m-label">DEIN NAME</label>
+          <div class="m-input" style="color:var(--app-muted)">Max Mustermann</div>
+        </div>
+        <div class="m-form-group">
+          <label class="m-label">E-MAIL-ADRESSE</label>
+          <div class="m-input" style="color:var(--app-muted)">max.mustermann@firma.de</div>
+        </div>
+        <div class="m-form-group">
+          <label class="m-label">PASSWORT (min. 6 Zeichen)</label>
+          <div class="m-input" style="color:var(--app-muted)">••••••••</div>
+        </div>
+        <div class="m-btn m-btn-primary" style="margin-top:8px">Konto erstellen →</div>
+        <div style="text-align:center; font-size:12px; color:var(--app-muted); margin-top:16px">
+          Bereits registriert? <span style="color:#818CF8">Anmelden</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="steps mt-24">
+    <div class="step">
+      <div class="step-left"><div class="step-circle">1</div><div class="step-line"></div></div>
+      <div class="step-body">
+        <h4>Tab "Konto erstellen" wählen</h4>
+        <p>Beim ersten Öffnen der App auf den Tab <strong>Konto erstellen</strong> klicken (nicht Anmelden).</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-left"><div class="step-circle">2</div><div class="step-line"></div></div>
+      <div class="step-body">
+        <h4>Name, E-Mail und Passwort eingeben</h4>
+        <p>Den vollständigen Namen eingeben (dieser wird im Team angezeigt), eine gültige E-Mail-Adresse und ein Passwort mit mindestens 6 Zeichen.</p>
+        <div class="callout callout-warn">
+          <span class="callout-icon">⚠️</span>
+          <div>Den Namen sorgfältig eingeben — er ist für alle Teammitglieder sichtbar. Er kann später in den Einstellungen geändert werden.</div>
+        </div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-left"><div class="step-circle">3</div><div class="step-line"></div></div>
+      <div class="step-body">
+        <h4>Auf "Konto erstellen" klicken</h4>
+        <p>Nach dem Klick wird das Konto sofort angelegt. Es ist keine E-Mail-Bestätigung erforderlich. Das Tool leitet automatisch zum nächsten Schritt weiter.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-left"><div class="step-circle">4</div></div>
+      <div class="step-body">
+        <h4>Zukünftig: Anmelden</h4>
+        <p>Bei jedem weiteren Besuch den Tab <strong>Anmelden</strong> wählen und E-Mail + Passwort eingeben. Die Session bleibt im Browser gespeichert.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     SECTION 3 — TEAM
+════════════════════════════════════════ -->
+<div class="section" id="s3">
+  <div class="section-header">
+    <div class="section-num">03</div>
+    <div class="section-title-wrap">
+      <h2>Team erstellen oder beitreten</h2>
+      <p>Einmalig nach der Registrierung</p>
+    </div>
+  </div>
+
+  <p>Nach der Registrierung fragt das Tool, ob man einem bestehenden Team beitreten oder ein neues Team erstellen möchte. Dieser Schritt ist einmalig.</p>
+
+  <!-- Team Setup Mockup -->
+  <div class="mockup">
+    <div class="mockup-bar">
+      <div class="mockup-dot" style="background:#EF4444"></div>
+      <div class="mockup-dot" style="background:#F59E0B"></div>
+      <div class="mockup-dot" style="background:#10B981"></div>
+      <span class="mockup-title">Team einrichten</span>
+    </div>
+    <div class="mockup-body">
+      <div style="text-align:center; margin-bottom:20px">
+        <div style="font-size:16px; font-weight:700; color:var(--app-text)">Team einrichten</div>
+        <div style="font-size:12px; color:var(--app-muted); margin-top:4px">Erstelle ein neues Team oder tritt einem bestehenden bei.</div>
+      </div>
+      <div class="m-setup-options">
+        <div class="m-setup-opt">
+          <div class="m-setup-opt-icon">🏗️</div>
+          <div class="m-setup-opt-title">Team erstellen</div>
+          <div class="m-setup-opt-desc">Ein neues Team anlegen und einen Einladungscode erhalten.</div>
+        </div>
+        <div class="m-setup-opt selected">
+          <div class="m-setup-opt-icon">🔑</div>
+          <div class="m-setup-opt-title">Team beitreten</div>
+          <div class="m-setup-opt-desc">Mit einem Einladungscode einem bestehenden Team beitreten.</div>
+        </div>
+      </div>
+      <div style="margin-top:12px">
+        <div style="font-size:11px; color:var(--app-muted); margin-bottom:8px; font-weight:500">EINLADUNGSCODE (6 STELLEN)</div>
+        <div class="m-code-display" style="letter-spacing:.4em">ABC123</div>
+        <div class="m-btn m-btn-primary" style="margin-top:12px">Team beitreten →</div>
+      </div>
+    </div>
+  </div>
+
+  <h3>Option A: Team beitreten (Normalfall)</h3>
+  <p>Die meisten Mitarbeiter treten einem bereits bestehenden Team bei. Den Code dafür bekommt man vom <strong>Teamersteller</strong> (z.B. der Teamleiter oder der IT-Verantwortliche).</p>
+  <div class="steps">
+    <div class="step">
+      <div class="step-left"><div class="step-circle">1</div><div class="step-line"></div></div>
+      <div class="step-body">
+        <h4>"Team beitreten" auswählen</h4>
+        <p>Die rechte Option anklicken.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-left"><div class="step-circle">2</div><div class="step-line"></div></div>
+      <div class="step-body">
+        <h4>6-stelligen Einladungscode eingeben</h4>
+        <p>Den Code exakt so eingeben, wie er mitgeteilt wurde (Groß-/Kleinschreibung beachten).</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-left"><div class="step-circle">3</div></div>
+      <div class="step-body">
+        <h4>Bestätigen → fertig</h4>
+        <p>Nach dem Klick auf "Team beitreten" landet man direkt auf dem Dashboard.</p>
+      </div>
+    </div>
+  </div>
+
+  <h3>Option B: Neues Team erstellen (Teamleiter)</h3>
+  <p>Wer das Team zum ersten Mal einrichtet, erstellt ein neues Team. Dabei wird automatisch ein 6-stelliger Einladungscode generiert.</p>
+  <div class="steps">
+    <div class="step">
+      <div class="step-left"><div class="step-circle">1</div><div class="step-line"></div></div>
+      <div class="step-body">
+        <h4>"Team erstellen" auswählen und Namen eingeben</h4>
+        <p>Z.B. "Team Marketing" oder "Vertrieb Nord".</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-left"><div class="step-circle">2</div><div class="step-line"></div></div>
+      <div class="step-body">
+        <h4>Einladungscode notieren</h4>
+        <p>Das Tool zeigt den generierten Code. Diesen Code an alle Teammitglieder weitergeben, damit sie beitreten können.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-left"><div class="step-circle">3</div></div>
+      <div class="step-body">
+        <h4>Code jederzeit in "Team verwalten" abrufbar</h4>
+        <p>Den Code findet man jederzeit in der Navigation unter <strong>Team verwalten</strong> → Einladungscode kopieren.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Team Manage mockup -->
+  <div class="mockup mt-16">
+    <div class="mockup-bar">
+      <div class="mockup-dot" style="background:#EF4444"></div>
+      <div class="mockup-dot" style="background:#F59E0B"></div>
+      <div class="mockup-dot" style="background:#10B981"></div>
+      <span class="mockup-title">Team verwalten (Teamersteller-Ansicht)</span>
+    </div>
+    <div class="mockup-body" style="max-width:420px">
+      <div style="font-size:14px; font-weight:600; color:var(--app-text); margin-bottom:4px">Team verwalten</div>
+      <div style="font-size:12px; color:var(--app-muted); margin-bottom:16px">Marketing Team</div>
+      <div style="background:var(--app-bg2); border:1px solid var(--app-border); border-radius:10px; padding:16px; margin-bottom:12px">
+        <div style="font-size:12px; font-weight:600; color:var(--app-text); margin-bottom:4px">Einladungscode</div>
+        <div style="font-size:12px; color:var(--app-muted); margin-bottom:12px">Teile diesen Code mit Personen, die deinem Team beitreten sollen.</div>
+        <div style="display:flex; gap:10px; align-items:center">
+          <div class="m-code-display" style="flex:1; font-size:18px; text-align:center; padding:10px">MKT-42</div>
+          <div class="m-btn m-btn-primary" style="width:auto; padding:10px 16px; font-size:13px">Kopieren</div>
+        </div>
+      </div>
+      <div style="background:var(--app-bg2); border:1px solid var(--app-border); border-radius:10px; padding:16px">
+        <div style="font-size:12px; font-weight:600; color:var(--app-text); margin-bottom:12px">Teammitglieder (4)</div>
+        <div style="display:flex; flex-direction:column; gap:6px">
+          <div style="display:flex; justify-content:space-between; align-items:center; padding:8px 10px; background:var(--app-bg3); border-radius:6px">
+            <span style="font-size:12px; color:var(--app-text)">Max Mustermann</span>
+            <span style="font-size:10px; color:#818CF8; background:var(--primary-bg); border:1px solid rgba(99,102,241,0.2); border-radius:20px; padding:2px 8px">Ersteller</span>
+          </div>
+          <div style="display:flex; justify-content:space-between; align-items:center; padding:8px 10px; background:var(--app-bg3); border-radius:6px">
+            <span style="font-size:12px; color:var(--app-text)">Anna Schmidt</span>
+            <span style="font-size:10px; color:var(--app-muted); background:var(--app-bg); border:1px solid var(--app-border); border-radius:20px; padding:2px 8px">Mitglied</span>
+          </div>
+          <div style="display:flex; justify-content:space-between; align-items:center; padding:8px 10px; background:var(--app-bg3); border-radius:6px">
+            <span style="font-size:12px; color:var(--app-text)">Jonas Weber</span>
+            <span style="font-size:10px; color:var(--app-muted); background:var(--app-bg); border:1px solid var(--app-border); border-radius:20px; padding:2px 8px">Mitglied</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     SECTION 4 — DASHBOARD
+════════════════════════════════════════ -->
+<div class="section" id="s4">
+  <div class="section-header">
+    <div class="section-num">04</div>
+    <div class="section-title-wrap">
+      <h2>Dashboard verstehen</h2>
+      <p>Die persönliche Anwesenheitsübersicht</p>
+    </div>
+  </div>
+
+  <p>Das Dashboard ist der Startbereich nach dem Login. Es zeigt die persönliche Anwesenheitsquote und alle relevanten Zahlen des gewählten Monats.</p>
+
+  <!-- Dashboard Mockup -->
+  <div class="mockup">
+    <div class="mockup-bar">
+      <div class="mockup-dot" style="background:#EF4444"></div>
+      <div class="mockup-dot" style="background:#F59E0B"></div>
+      <div class="mockup-dot" style="background:#10B981"></div>
+      <span class="mockup-title">Mein Dashboard — Mai 2025</span>
+    </div>
+    <div class="app-navbar">
+      <span class="app-nav-brand">Anwesenheitsrechner</span>
+      <span class="app-nav-link active">📊 Dashboard</span>
+      <span class="app-nav-link">📅 Kalender</span>
+      <span class="app-nav-link">👥 Team</span>
+      <span class="app-nav-link">⚙️</span>
+    </div>
+    <div class="mockup-body">
+      <!-- Progress ring -->
+      <div style="display:flex; gap:20px; align-items:center; margin-bottom:16px; padding:16px; background:var(--app-bg2); border:1px solid var(--app-border); border-radius:12px">
+        <div style="position:relative; width:120px; height:120px; flex-shrink:0">
+          <svg width="120" height="120" viewBox="0 0 120 120" style="transform:rotate(-90deg)">
+            <circle cx="60" cy="60" r="50" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="10"/>
+            <circle cx="60" cy="60" r="50" fill="none" stroke="rgba(245,158,11,0.4)" stroke-width="10"
+              stroke-dasharray="3 311" stroke-dashoffset="78"/>
+            <circle cx="60" cy="60" r="50" fill="none" stroke="#10B981" stroke-width="10"
+              stroke-dasharray="314" stroke-dashoffset="141"/>
+          </svg>
+          <div style="position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center">
+            <div style="font-size:24px; font-weight:700; color:#10B981">55%</div>
+            <div style="font-size:9px; color:var(--app-muted); text-transform:uppercase; letter-spacing:.06em">Anwesenheit</div>
+            <div style="font-size:9px; color:#10B981; margin-top:2px">✅ Ziel erreicht</div>
+          </div>
+        </div>
+        <div style="flex:1">
+          <div style="font-size:13px; font-weight:600; color:var(--app-text); margin-bottom:10px">8 von 8 Tagen — Ziel: 8 Bürotage</div>
+          <div style="display:flex; gap:8px">
+            <div style="flex:1; background:var(--app-bg3); border-radius:8px; padding:10px; text-align:center">
+              <div style="font-size:10px; color:var(--app-muted); margin-bottom:3px">Bis heute</div>
+              <div style="font-size:18px; font-weight:700; color:#10B981">58%</div>
+              <div style="font-size:9px; color:#10B981">✅ Ziel erreicht</div>
+            </div>
+            <div style="flex:1; background:var(--app-bg3); border-radius:8px; padding:10px; text-align:center">
+              <div style="font-size:10px; color:var(--app-muted); margin-bottom:3px">Gesamter Monat</div>
+              <div style="font-size:18px; font-weight:700; color:#10B981">55%</div>
+              <div style="font-size:9px; color:#10B981">✅ Ziel erreicht</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- Stats grid -->
+      <div class="m-stats-grid">
+        <div class="m-stat-card">
+          <div class="m-stat-icon">📅</div>
+          <div class="m-stat-val" style="color:#818CF8">22</div>
+          <div class="m-stat-lbl">Arbeitstage</div>
+        </div>
+        <div class="m-stat-card">
+          <div class="m-stat-icon">🏢</div>
+          <div class="m-stat-val" style="color:#818CF8">8</div>
+          <div class="m-stat-lbl">Bürotage</div>
+        </div>
+        <div class="m-stat-card">
+          <div class="m-stat-icon">🏠</div>
+          <div class="m-stat-val" style="color:var(--app-muted)">5</div>
+          <div class="m-stat-lbl">Mobil</div>
+        </div>
+        <div class="m-stat-card">
+          <div class="m-stat-icon">🌴</div>
+          <div class="m-stat-val" style="color:#FCD34D">3</div>
+          <div class="m-stat-lbl">Urlaub</div>
+        </div>
+        <div class="m-stat-card">
+          <div class="m-stat-icon">⏰</div>
+          <div class="m-stat-val" style="color:#67E8F9">1</div>
+          <div class="m-stat-lbl">Gleittag</div>
+        </div>
+        <div class="m-stat-card">
+          <div class="m-stat-icon">🤒</div>
+          <div class="m-stat-val" style="color:#FCA5A5">0</div>
+          <div class="m-stat-lbl">Kranktage</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <h3>Was die Zahlen bedeuten</h3>
+  <div style="display:flex; flex-direction:column; gap:0; border:1px solid var(--border); border-radius:12px; overflow:hidden; margin:16px 0;">
+    <div style="display:flex; gap:12px; padding:14px 16px; border-bottom:1px solid var(--border); background:var(--card-bg)">
+      <span style="flex-shrink:0; font-size:18px">📊</span>
+      <div><strong>Anwesenheitsquote (Ring)</strong> — Der große Ring zeigt die Büropräsenz als Prozentsatz. Das orange Strich-Markierung zeigt die 50%-Ziellinie.</div>
+    </div>
+    <div style="display:flex; gap:12px; padding:14px 16px; border-bottom:1px solid var(--border); background:var(--card-bg)">
+      <span style="flex-shrink:0; font-size:18px">📅</span>
+      <div><strong>Bis heute / Gesamter Monat</strong> — Zwei Badges zeigen: Wie ist die Quote bisher (MTD) und wie wird sie am Monatsende aussehen (wenn sich die Tage so fortsetzen)?</div>
+    </div>
+    <div style="display:flex; gap:12px; padding:14px 16px; border-bottom:1px solid var(--border); background:var(--card-bg)">
+      <span style="flex-shrink:0; font-size:18px">🎯</span>
+      <div><strong>Status-Anzeige</strong> — Grün = Ziel erreicht, Orange = knapp darunter (35–50%), Rot = deutlich unter Ziel (&lt;35%).</div>
+    </div>
+    <div style="display:flex; gap:12px; padding:14px 16px; background:var(--card-bg)">
+      <span style="flex-shrink:0; font-size:18px">◀ ▶</span>
+      <div><strong>Monatsnavigation</strong> — Mit den Pfeilen links/rechts neben der Monatsanzeige zwischen Monaten wechseln. Vergangene Monate können nachträglich eingetragen werden.</div>
+    </div>
+  </div>
+
+  <div class="callout callout-tip">
+    <span class="callout-icon">💡</span>
+    <div><strong>Tipp:</strong> Das Dashboard täglich morgens kurz aufrufen, um zu prüfen, ob man auf Kurs liegt. So gibt es am Monatsende keine bösen Überraschungen.</div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     SECTION 5 — KALENDER
+════════════════════════════════════════ -->
+<div class="section" id="s5">
+  <div class="section-header">
+    <div class="section-num">05</div>
+    <div class="section-title-wrap">
+      <h2>Kalender — Tage eintragen</h2>
+      <p>Die tägliche Kernfunktion des Tools</p>
+    </div>
+  </div>
+
+  <p>Im Kalender werden die Arbeitstage erfasst. Ein Klick auf einen Tag öffnet ein Auswahlfenster, in dem der Tagestyp eingestellt wird.</p>
+
+  <!-- Calendar Mockup -->
+  <div class="mockup">
+    <div class="mockup-bar">
+      <div class="mockup-dot" style="background:#EF4444"></div>
+      <div class="mockup-dot" style="background:#F59E0B"></div>
+      <div class="mockup-dot" style="background:#10B981"></div>
+      <span class="mockup-title">Kalender — Mai 2025</span>
+    </div>
+    <div class="app-navbar">
+      <span class="app-nav-brand">Anwesenheitsrechner</span>
+      <span class="app-nav-link">📊 Dashboard</span>
+      <span class="app-nav-link active">📅 Kalender</span>
+      <span class="app-nav-link">👥 Team</span>
+      <span class="app-nav-link">⚙️</span>
+    </div>
+    <div class="mockup-body">
+      <div style="display:grid; grid-template-columns:1fr 200px; gap:16px">
+        <div>
+          <div style="font-size:13px; font-weight:600; color:var(--app-text); margin-bottom:12px; display:flex; justify-content:space-between">
+            <span>Mai 2025</span>
+            <div style="display:flex; align-items:center; gap:6px">
+              <span style="font-size:16px; cursor:pointer; color:var(--app-muted)">‹</span>
+              <span style="font-size:16px; cursor:pointer; color:var(--app-muted)">›</span>
+            </div>
+          </div>
+          <div class="m-cal">
+            <div class="m-cal-hdr">Mo</div><div class="m-cal-hdr">Di</div><div class="m-cal-hdr">Mi</div>
+            <div class="m-cal-hdr">Do</div><div class="m-cal-hdr">Fr</div><div class="m-cal-hdr">Sa</div><div class="m-cal-hdr">So</div>
+            <div class="m-cal-day m-cal-empty"></div><div class="m-cal-day m-cal-empty"></div>
+            <div class="m-cal-day m-cal-none">1</div><div class="m-cal-day m-cal-holiday">2</div>
+            <div class="m-cal-day m-cal-office">3</div><div class="m-cal-day m-cal-wknd">4</div><div class="m-cal-day m-cal-wknd">5</div>
+            <div class="m-cal-day m-cal-office">6</div><div class="m-cal-day m-cal-remote">7</div>
+            <div class="m-cal-day m-cal-office">8</div><div class="m-cal-day m-cal-remote">9</div>
+            <div class="m-cal-day m-cal-office">10</div><div class="m-cal-day m-cal-wknd">11</div><div class="m-cal-day m-cal-wknd">12</div>
+            <div class="m-cal-day m-cal-vacation">13</div><div class="m-cal-day m-cal-vacation">14</div>
+            <div class="m-cal-day m-cal-vacation">15</div><div class="m-cal-day m-cal-vacation">16</div>
+            <div class="m-cal-day m-cal-vacation">17</div><div class="m-cal-day m-cal-wknd">18</div><div class="m-cal-day m-cal-wknd">19</div>
+            <div class="m-cal-day m-cal-remote">20</div><div class="m-cal-day m-cal-office">21</div>
+            <div class="m-cal-day m-cal-office">22</div><div class="m-cal-day m-cal-remote">23</div>
+            <div class="m-cal-day m-cal-today m-cal-office">24</div>
+            <div class="m-cal-day m-cal-wknd">25</div><div class="m-cal-day m-cal-wknd">26</div>
+            <div class="m-cal-day m-cal-none">27</div><div class="m-cal-day m-cal-none">28</div>
+            <div class="m-cal-day m-cal-none">29</div><div class="m-cal-day m-cal-none">30</div>
+            <div class="m-cal-day m-cal-none">31</div>
+          </div>
+          <!-- Legend -->
+          <div style="margin-top:12px; display:flex; flex-wrap:wrap; gap:6px; padding-top:10px; border-top:1px solid var(--app-border)">
+            <span style="font-size:9px; color:var(--app-muted); display:flex; align-items:center; gap:3px"><span style="width:8px;height:8px;border-radius:2px;background:#6366f1;display:inline-block"></span>Büro</span>
+            <span style="font-size:9px; color:var(--app-muted); display:flex; align-items:center; gap:3px"><span style="width:8px;height:8px;border-radius:2px;background:#64748b;display:inline-block"></span>Mobil</span>
+            <span style="font-size:9px; color:var(--app-muted); display:flex; align-items:center; gap:3px"><span style="width:8px;height:8px;border-radius:2px;background:#f59e0b;display:inline-block"></span>Urlaub</span>
+            <span style="font-size:9px; color:var(--app-muted); display:flex; align-items:center; gap:3px"><span style="width:8px;height:8px;border-radius:2px;background:#8b5cf6;display:inline-block"></span>Feiertag</span>
+            <span style="font-size:9px; color:var(--app-muted); display:flex; align-items:center; gap:3px"><span style="width:8px;height:8px;border-radius:2px;background:#06b6d4;display:inline-block"></span>Gleittag</span>
+            <span style="font-size:9px; color:var(--app-muted); display:flex; align-items:center; gap:3px"><span style="width:8px;height:8px;border-radius:2px;background:#ef4444;display:inline-block"></span>Krank</span>
+          </div>
+        </div>
+        <!-- Sidebar -->
+        <div style="display:flex; flex-direction:column; gap:8px">
+          <div style="background:var(--app-bg2); border:1px solid var(--app-border); border-radius:10px; padding:12px">
+            <div style="font-size:11px; font-weight:600; color:var(--app-text); margin-bottom:8px">Feiertage (BW)</div>
+            <div style="font-size:11px; color:var(--app-muted)">🎉 Tag der Arbeit — 1. Mai</div>
+            <div style="font-size:11px; color:var(--app-muted); margin-top:4px">🎉 Christi Himmelfahrt — 29. Mai</div>
+          </div>
+          <div style="background:var(--app-bg2); border:1px solid var(--app-border); border-radius:10px; padding:12px">
+            <div style="font-size:11px; font-weight:600; color:var(--app-text); margin-bottom:8px">Schulferien (BW)</div>
+            <div style="font-size:11px; color:var(--app-muted)">Pfingstferien<br>3.6.–14.6.2025</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <h3>Tag eintragen — Schritt für Schritt</h3>
+  <div class="steps">
+    <div class="step">
+      <div class="step-left"><div class="step-circle">1</div><div class="step-line"></div></div>
+      <div class="step-body">
+        <h4>Im Menü auf "Kalender" klicken</h4>
+        <p>Das Kalender-Symbol in der Navigationsleiste öffnet die Monatsansicht.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-left"><div class="step-circle">2</div><div class="step-line"></div></div>
+      <div class="step-body">
+        <h4>Gewünschten Tag anklicken</h4>
+        <p>Auf den Tag klicken, der eingetragen werden soll. Wochenenden und Feiertage können nicht manuell eingetragen werden (werden automatisch erkannt). Ein Popup-Fenster öffnet sich.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-left"><div class="step-circle">3</div><div class="step-line"></div></div>
+      <div class="step-body">
+        <h4>Tagestyp auswählen</h4>
+        <p>Im geöffneten Fenster einen der Tagestypen auswählen (siehe Abschnitt 6). Der Eintrag wird sofort gespeichert.</p>
+        <!-- Modal Mockup -->
+        <div class="m-modal">
+          <div class="m-modal-title">📅 Donnerstag, 29. Mai 2025</div>
+          <div class="m-type-btns">
+            <div class="m-type-btn" style="background:rgba(99,102,241,0.15); border-color:rgba(99,102,241,0.4); color:#818CF8">
+              <span style="font-size:16px">🏢</span>
+              <span>Büro</span>
+              <span style="font-size:9px; opacity:.7">+Präsenz</span>
+            </div>
+            <div class="m-type-btn" style="background:rgba(100,116,139,0.15); border-color:rgba(100,116,139,0.3); color:#94A3B8">
+              <span style="font-size:16px">🏠</span>
+              <span>Mobiles Arbeiten</span>
+            </div>
+            <div class="m-type-btn" style="background:rgba(245,158,11,0.1); border-color:rgba(245,158,11,0.3); color:#FCD34D">
+              <span style="font-size:16px">🌴</span>
+              <span>Urlaub</span>
+              <span style="font-size:9px; opacity:.7">–Pflicht</span>
+            </div>
+            <div class="m-type-btn" style="background:rgba(6,182,212,0.1); border-color:rgba(6,182,212,0.3); color:#67E8F9">
+              <span style="font-size:16px">⏰</span>
+              <span>Gleittag</span>
+              <span style="font-size:9px; opacity:.7">–Pflicht</span>
+            </div>
+            <div class="m-type-btn" style="background:rgba(239,68,68,0.1); border-color:rgba(239,68,68,0.3); color:#FCA5A5">
+              <span style="font-size:16px">🤒</span>
+              <span>Krank</span>
+              <span style="font-size:9px; opacity:.7">–Pflicht</span>
+            </div>
+          </div>
+          <div style="margin-top:10px">
+            <div class="m-btn m-btn-ghost" style="font-size:12px; padding:8px">🗑 Eintrag löschen</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-left"><div class="step-circle">4</div></div>
+      <div class="step-body">
+        <h4>Monat wechseln für Rückerfassung</h4>
+        <p>Mit den Pfeilen oben rechts können Vormonat oder frühere Monate aufgerufen und nachträglich eingetragen werden.</p>
+        <div class="callout callout-tip">
+          <span class="callout-icon">💡</span>
+          <div>Beim ersten Start: Den aktuellen Monat von Anfang an rückwirkend eintragen. Das dauert ca. 2–3 Minuten.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <h3>Eintrag korrigieren oder löschen</h3>
+  <p>Auf einen bereits eingetragenen Tag klicken → das Modal öffnet sich → entweder einen anderen Typ wählen (überschreibt automatisch) oder auf <strong>🗑 Eintrag löschen</strong> klicken.</p>
+</div>
+
+<!-- ════════════════════════════════════════
+     SECTION 6 — TAGESTYPEN
+════════════════════════════════════════ -->
+<div class="section" id="s6">
+  <div class="section-header">
+    <div class="section-num">06</div>
+    <div class="section-title-wrap">
+      <h2>Tagestypen im Detail</h2>
+      <p>Was jeder Typ bedeutet und wie er gerechnet wird</p>
+    </div>
+  </div>
+
+  <p>Es gibt 6 Tagestypen, die unterschiedlich in die Berechnung einfließen:</p>
+
+  <div class="day-type-grid mt-16">
+    <div class="day-type-card" style="background:rgba(99,102,241,0.08); border-color:rgba(99,102,241,0.25)">
+      <div class="emoji">🏢</div>
+      <div class="name">Büro</div>
+      <div class="desc">Zählt als Präsenztag. Erhöht die Anwesenheitsquote.</div>
+      <div class="flex gap-8 mt-16"><span class="tag tag-green">+Präsenz</span></div>
+    </div>
+    <div class="day-type-card" style="background:rgba(100,116,139,0.08); border-color:rgba(100,116,139,0.2)">
+      <div class="emoji">🏠</div>
+      <div class="name">Mobiles Arbeiten</div>
+      <div class="desc">Zählt nicht als Büropräsenz. Keine Auswirkung auf die Quote.</div>
+      <div class="flex gap-8 mt-16"><span class="tag tag-amber">Neutral</span></div>
+    </div>
+    <div class="day-type-card" style="background:rgba(245,158,11,0.08); border-color:rgba(245,158,11,0.2)">
+      <div class="emoji">🌴</div>
+      <div class="name">Urlaub</div>
+      <div class="desc">Reduziert die Pflicht-Arbeitstage. Urlaubstage werden herausgerechnet.</div>
+      <div class="flex gap-8 mt-16"><span class="tag tag-blue">–Pflicht AT</span></div>
+    </div>
+    <div class="day-type-card" style="background:rgba(6,182,212,0.08); border-color:rgba(6,182,212,0.2)">
+      <div class="emoji">⏰</div>
+      <div class="name">Gleittag</div>
+      <div class="desc">Wie Urlaub: reduziert die Pflicht-Arbeitstage proportional.</div>
+      <div class="flex gap-8 mt-16"><span class="tag tag-blue">–Pflicht AT</span></div>
+    </div>
+    <div class="day-type-card" style="background:rgba(239,68,68,0.08); border-color:rgba(239,68,68,0.2)">
+      <div class="emoji">🤒</div>
+      <div class="name">Krank</div>
+      <div class="desc">Krankheitstage werden wie Urlaub behandelt und reduzieren die Pflicht-Arbeitstage.</div>
+      <div class="flex gap-8 mt-16"><span class="tag tag-blue">–Pflicht AT</span></div>
+    </div>
+    <div class="day-type-card" style="background:rgba(139,92,246,0.08); border-color:rgba(139,92,246,0.2)">
+      <div class="emoji">🎉</div>
+      <div class="name">Feiertag (BW)</div>
+      <div class="desc">Automatisch vom System erkannt. Kein manueller Eintrag möglich oder nötig.</div>
+      <div class="flex gap-8 mt-16"><span class="tag tag-blue">–Pflicht AT</span><span class="tag" style="background:#F8F4FF; border-color:rgba(139,92,246,0.2); color:var(--purple)">Automatisch</span></div>
+    </div>
+  </div>
+
+  <h3>Wann welchen Typ wählen?</h3>
+  <div style="border:1px solid var(--border); border-radius:12px; overflow:hidden; margin:16px 0;">
+    <div style="display:grid; grid-template-columns:1fr 1fr; border-bottom:1px solid var(--border);">
+      <div style="padding:12px 16px; font-weight:600; font-size:13px; background:#F8FAFC; border-right:1px solid var(--border)">Situation</div>
+      <div style="padding:12px 16px; font-weight:600; font-size:13px; background:#F8FAFC">Richtiger Tagestyp</div>
+    </div>
+    <div style="display:grid; grid-template-columns:1fr 1fr; border-bottom:1px solid var(--border);">
+      <div style="padding:10px 16px; font-size:13px; border-right:1px solid var(--border)">Im Büro</div>
+      <div style="padding:10px 16px; font-size:13px;">🏢 Büro</div>
+    </div>
+    <div style="display:grid; grid-template-columns:1fr 1fr; border-bottom:1px solid var(--border);">
+      <div style="padding:10px 16px; font-size:13px; border-right:1px solid var(--border)">Zuhause oder unterwegs gearbeitet</div>
+      <div style="padding:10px 16px; font-size:13px;">🏠 Mobiles Arbeiten</div>
+    </div>
+    <div style="display:grid; grid-template-columns:1fr 1fr; border-bottom:1px solid var(--border);">
+      <div style="padding:10px 16px; font-size:13px; border-right:1px solid var(--border)">Urlaub genommen</div>
+      <div style="padding:10px 16px; font-size:13px;">🌴 Urlaub</div>
+    </div>
+    <div style="display:grid; grid-template-columns:1fr 1fr; border-bottom:1px solid var(--border);">
+      <div style="padding:10px 16px; font-size:13px; border-right:1px solid var(--border)">Gleitzeit abgebaut</div>
+      <div style="padding:10px 16px; font-size:13px;">⏰ Gleittag</div>
+    </div>
+    <div style="display:grid; grid-template-columns:1fr 1fr; border-bottom:1px solid var(--border);">
+      <div style="padding:10px 16px; font-size:13px; border-right:1px solid var(--border)">Krankgemeldet</div>
+      <div style="padding:10px 16px; font-size:13px;">🤒 Krank</div>
+    </div>
+    <div style="display:grid; grid-template-columns:1fr 1fr;">
+      <div style="padding:10px 16px; font-size:13px; border-right:1px solid var(--border)">Gesetzlicher Feiertag</div>
+      <div style="padding:10px 16px; font-size:13px; color:var(--muted)">Automatisch erkannt — kein Eintrag nötig</div>
+    </div>
+  </div>
+
+  <div class="callout callout-warn">
+    <span class="callout-icon">⚠️</span>
+    <div><strong>Wichtig:</strong> Mobiles Arbeiten erhöht die Quote <em>nicht</em>. Wer zu Hause arbeitet, muss an anderen Tagen im Büro sein, um das 50%-Ziel zu erreichen.</div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     SECTION 7 — TEAM-ÜBERSICHT
+════════════════════════════════════════ -->
+<div class="section" id="s7">
+  <div class="section-header">
+    <div class="section-num">07</div>
+    <div class="section-title-wrap">
+      <h2>Team-Übersicht verstehen</h2>
+      <p>Aggregierte Teamstatistiken — vollständig anonym</p>
+    </div>
+  </div>
+
+  <p>Die Team-Übersicht zeigt, wie das gesamte Team bei der Büropräsenz abschneidet. Wichtig: Es sind <strong>keine individuellen Daten</strong> sichtbar — alle Werte sind anonymisiert und aggregiert.</p>
+
+  <!-- Team View Mockup -->
+  <div class="mockup">
+    <div class="mockup-bar">
+      <div class="mockup-dot" style="background:#EF4444"></div>
+      <div class="mockup-dot" style="background:#F59E0B"></div>
+      <div class="mockup-dot" style="background:#10B981"></div>
+      <span class="mockup-title">Team-Übersicht — Mai 2025</span>
+    </div>
+    <div class="app-navbar">
+      <span class="app-nav-brand">Anwesenheitsrechner</span>
+      <span class="app-nav-link">📊 Dashboard</span>
+      <span class="app-nav-link">📅 Kalender</span>
+      <span class="app-nav-link active">👥 Team</span>
+      <span class="app-nav-link">⚙️</span>
+    </div>
+    <div class="mockup-body">
+      <!-- Summary cards -->
+      <div class="m-stats-grid" style="grid-template-columns:1fr 1fr 1fr; margin-bottom:16px">
+        <div class="m-stat-card">
+          <div class="m-stat-icon">📊</div>
+          <div class="m-stat-val" style="color:#10B981">68%</div>
+          <div class="m-stat-lbl">Team-Durchschnitt</div>
+          <div style="font-size:9px; color:var(--app-muted); margin-top:3px">Bis heute: 72%</div>
+        </div>
+        <div class="m-stat-card">
+          <div class="m-stat-icon">✅</div>
+          <div class="m-stat-val" style="color:#10B981">7</div>
+          <div class="m-stat-lbl">Mitglieder ≥ 50%</div>
+          <div style="font-size:9px; color:var(--app-muted); margin-top:3px">Bis heute: 8</div>
+        </div>
+        <div class="m-stat-card">
+          <div class="m-stat-icon">⚠️</div>
+          <div class="m-stat-val" style="color:#F59E0B">2</div>
+          <div class="m-stat-lbl">Mitglieder &lt; 50%</div>
+          <div style="font-size:9px; color:var(--app-muted); margin-top:3px">Bis heute: 1</div>
+        </div>
+      </div>
+      <!-- Bars -->
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px">
+        <div style="background:var(--app-bg2); border:1px solid var(--app-border); border-radius:10px; padding:14px">
+          <div style="font-size:11px; font-weight:600; color:var(--app-text); margin-bottom:12px">Anwesenheitsverteilung (anonym)</div>
+          <div class="m-bar-row">
+            <div class="m-bar-hdr"><span>Mitglied 1</span><span style="color:#10B981">87%</span></div>
+            <div class="m-bar-bg"><div class="m-bar-fill" style="width:87%;background:#10B981"></div></div>
+          </div>
+          <div class="m-bar-row">
+            <div class="m-bar-hdr"><span>Mitglied 2</span><span style="color:#10B981">75%</span></div>
+            <div class="m-bar-bg"><div class="m-bar-fill" style="width:75%;background:#10B981"></div></div>
+          </div>
+          <div class="m-bar-row">
+            <div class="m-bar-hdr"><span>Mitglied 3</span><span style="color:#10B981">68%</span></div>
+            <div class="m-bar-bg"><div class="m-bar-fill" style="width:68%;background:#10B981"></div></div>
+          </div>
+          <div class="m-bar-row">
+            <div class="m-bar-hdr"><span>Mitglied 4</span><span style="color:#10B981">55%</span></div>
+            <div class="m-bar-bg"><div class="m-bar-fill" style="width:55%;background:#10B981"></div></div>
+          </div>
+          <div class="m-bar-row">
+            <div class="m-bar-hdr"><span>Mitglied 5</span><span style="color:#F59E0B">44%</span></div>
+            <div class="m-bar-bg"><div class="m-bar-fill" style="width:44%;background:#F59E0B"></div></div>
+          </div>
+          <div class="m-bar-row">
+            <div class="m-bar-hdr"><span>Mitglied 6</span><span style="color:#EF4444">28%</span></div>
+            <div class="m-bar-bg"><div class="m-bar-fill" style="width:28%;background:#EF4444"></div></div>
+          </div>
+        </div>
+        <div style="background:var(--app-bg2); border:1px solid var(--app-border); border-radius:10px; padding:14px">
+          <div style="font-size:11px; font-weight:600; color:var(--app-text); margin-bottom:12px">Tagestypen im Team</div>
+          <div class="m-bar-row">
+            <div class="m-bar-hdr"><span>🏢 Bürotage</span><span>94</span></div>
+            <div class="m-bar-bg"><div class="m-bar-fill" style="width:90%;background:#6366f1"></div></div>
+          </div>
+          <div class="m-bar-row">
+            <div class="m-bar-hdr"><span>🏠 Mobil</span><span>71</span></div>
+            <div class="m-bar-bg"><div class="m-bar-fill" style="width:68%;background:#64748b"></div></div>
+          </div>
+          <div class="m-bar-row">
+            <div class="m-bar-hdr"><span>🌴 Urlaub</span><span>22</span></div>
+            <div class="m-bar-bg"><div class="m-bar-fill" style="width:21%;background:#f59e0b"></div></div>
+          </div>
+          <div class="m-bar-row">
+            <div class="m-bar-hdr"><span>⏰ Gleittag</span><span>8</span></div>
+            <div class="m-bar-bg"><div class="m-bar-fill" style="width:8%;background:#06b6d4"></div></div>
+          </div>
+          <div class="m-bar-row">
+            <div class="m-bar-hdr"><span>🤒 Krank</span><span>5</span></div>
+            <div class="m-bar-bg"><div class="m-bar-fill" style="width:5%;background:#ef4444"></div></div>
+          </div>
+          <div style="margin-top:10px; padding:8px; background:var(--app-bg3); border-radius:6px; font-size:9px; color:var(--app-muted)">
+            🔒 Alle Werte aggregiert – keine Einzeleinsicht möglich
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <h3>Was in der Team-Übersicht sichtbar ist</h3>
+  <div style="display:flex; flex-direction:column; gap:0; border:1px solid var(--border); border-radius:12px; overflow:hidden; margin:16px 0;">
+    <div style="padding:12px 16px; border-bottom:1px solid var(--border); display:flex; gap:12px; align-items:flex-start; background:var(--card-bg)">
+      <span style="font-size:18px; flex-shrink:0">📊</span>
+      <div><strong>Team-Durchschnitt:</strong> Die durchschnittliche Anwesenheitsquote aller Mitglieder. Bis heute (MTD) und Gesamtmonat.</div>
+    </div>
+    <div style="padding:12px 16px; border-bottom:1px solid var(--border); display:flex; gap:12px; align-items:flex-start; background:var(--card-bg)">
+      <span style="font-size:18px; flex-shrink:0">✅</span>
+      <div><strong>Mitglieder ≥ 50% / &lt; 50%:</strong> Anzahl der Personen, die das Ziel bereits erfüllen bzw. noch nicht erreichen.</div>
+    </div>
+    <div style="padding:12px 16px; border-bottom:1px solid var(--border); display:flex; gap:12px; align-items:flex-start; background:var(--card-bg)">
+      <span style="font-size:18px; flex-shrink:0">📊</span>
+      <div><strong>Anwesenheitsverteilung:</strong> Balken pro Mitglied, sortiert nach Quote. Mitglieder sind anonym nummeriert — kein Name sichtbar.</div>
+    </div>
+    <div style="padding:12px 16px; display:flex; gap:12px; align-items:flex-start; background:var(--card-bg)">
+      <span style="font-size:18px; flex-shrink:0">📈</span>
+      <div><strong>Tagestypen im Team:</strong> Gesamtzahl aller eingetragenen Bürotage, Homeoffice-Tage, Urlaubstage usw. im ganzen Team.</div>
+    </div>
+  </div>
+
+  <div class="callout callout-note">
+    <span class="callout-icon">🔒</span>
+    <div><strong>Datenschutz:</strong> Es ist technisch nicht möglich, die Einträge anderer Mitglieder einzusehen. Nur die eigenen Daten sind individuell sichtbar. Die Team-Ansicht zeigt ausschließlich anonyme Aggregate.</div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     SECTION 8 — EINSTELLUNGEN
+════════════════════════════════════════ -->
+<div class="section" id="s8">
+  <div class="section-header">
+    <div class="section-num">08</div>
+    <div class="section-title-wrap">
+      <h2>Einstellungen anpassen</h2>
+      <p>Name, Arbeitstage und Datenschutz konfigurieren</p>
+    </div>
+  </div>
+
+  <p>Die Einstellungen sind über das ⚙️-Symbol in der Navigationsleiste erreichbar. Hier können Name, Arbeitstage und Datenschutzoptionen angepasst werden.</p>
+
+  <!-- Settings Mockup -->
+  <div class="mockup">
+    <div class="mockup-bar">
+      <div class="mockup-dot" style="background:#EF4444"></div>
+      <div class="mockup-dot" style="background:#F59E0B"></div>
+      <div class="mockup-dot" style="background:#10B981"></div>
+      <span class="mockup-title">Einstellungen</span>
+    </div>
+    <div class="app-navbar">
+      <span class="app-nav-brand">Anwesenheitsrechner</span>
+      <span class="app-nav-link">📊 Dashboard</span>
+      <span class="app-nav-link">📅 Kalender</span>
+      <span class="app-nav-link">👥 Team</span>
+      <span class="app-nav-link active">⚙️ Einstellungen</span>
+    </div>
+    <div class="mockup-body" style="max-width:460px">
+      <!-- Name Card -->
+      <div style="background:var(--app-bg2); border:1px solid var(--app-border); border-radius:12px; padding:16px; margin-bottom:12px">
+        <div style="font-size:12px; font-weight:700; color:var(--app-text); margin-bottom:4px">Name</div>
+        <div style="font-size:11px; color:var(--app-muted); margin-bottom:10px">Wird im Team und in der Navbar angezeigt.</div>
+        <div class="m-input">Max Mustermann</div>
+      </div>
+      <!-- Team Card -->
+      <div style="background:var(--app-bg2); border:1px solid var(--app-border); border-radius:12px; padding:16px; margin-bottom:12px">
+        <div style="font-size:12px; font-weight:700; color:var(--app-text); margin-bottom:4px">Team</div>
+        <div style="font-size:11px; color:var(--app-muted); margin-bottom:10px">Dein aktuelles Team.</div>
+        <div style="display:flex; align-items:center; gap:8px">
+          <span style="font-size:14px; font-weight:600; color:var(--app-text)">Marketing Team</span>
+          <span style="font-size:10px; color:#10B981; background:rgba(16,185,129,0.1); border:1px solid rgba(16,185,129,0.25); border-radius:20px; padding:2px 8px">Aktiv</span>
+        </div>
+      </div>
+      <!-- Workdays Card -->
+      <div style="background:var(--app-bg2); border:1px solid var(--app-border); border-radius:12px; padding:16px; margin-bottom:12px">
+        <div style="font-size:12px; font-weight:700; color:var(--app-text); margin-bottom:4px">Arbeitstage</div>
+        <div style="font-size:11px; color:var(--app-muted); margin-bottom:10px">Nicht gewählte Wochentage werden bei der Berechnung ignoriert.</div>
+        <div class="m-workday-row">
+          <div class="m-wd-toggle active">Mo</div>
+          <div class="m-wd-toggle active">Di</div>
+          <div class="m-wd-toggle active">Mi</div>
+          <div class="m-wd-toggle active">Do</div>
+          <div class="m-wd-toggle">Fr</div>
+        </div>
+        <div style="font-size:10px; color:var(--app-muted); margin-top:6px">Teilzeit: Mo, Di, Mi, Do (4 Tage/Woche)</div>
+      </div>
+      <!-- Privacy Card -->
+      <div style="background:var(--app-bg2); border:1px solid var(--app-border); border-radius:12px; padding:16px; margin-bottom:16px">
+        <div style="font-size:12px; font-weight:700; color:var(--app-text); margin-bottom:4px">Datenschutz</div>
+        <div class="m-toggle-row">
+          <div>
+            <div style="font-size:12px; font-weight:500; color:var(--app-text)">Nicht in Teamstatistik erscheinen</div>
+            <div style="font-size:10px; color:var(--app-muted); margin-top:2px">Deine Einträge fließen nicht in die Team-Übersicht ein</div>
+          </div>
+          <div class="m-toggle-knob"><div class="knob"></div></div>
+        </div>
+      </div>
+      <div style="display:flex; gap:8px">
+        <div class="m-btn m-btn-ghost" style="flex:1; font-size:13px; padding:10px">Abbrechen</div>
+        <div class="m-btn m-btn-primary" style="flex:2; font-size:13px; padding:10px">Speichern</div>
+      </div>
+    </div>
+  </div>
+
+  <h3>Name ändern</h3>
+  <p>Den gewünschten Namen in das Eingabefeld eingeben und auf <strong>Speichern</strong> klicken. Der Name ist für alle Teammitglieder sichtbar.</p>
+
+  <h3>Arbeitstage konfigurieren (Teilzeit)</h3>
+  <p>Wer nicht Vollzeit (Mo–Fr) arbeitet, deaktiviert die entsprechenden Tage. Das Tool ignoriert dann diese Wochentage bei der Berechnung — sie werden weder im Kalender angezeigt noch in die Quote einberechnet.</p>
+  <div class="callout callout-info">
+    <span class="callout-icon">✅</span>
+    <div><strong>Beispiel Teilzeit:</strong> Wer Mo–Do arbeitet (4 Tage/Woche), deaktiviert "Fr". Das Tool rechnet dann korrekt: z.B. 18 Arbeitstage statt 22, und das 50%-Ziel entsprechend 9 statt 11 Bürotage.</div>
+  </div>
+
+  <h3>Datenschutz: Aus Team-Statistik ausblenden</h3>
+  <p>Der Toggle <strong>"Nicht in Teamstatistik erscheinen"</strong> blendet die eigenen Einträge aus der anonymen Team-Übersicht aus. Das eigene Dashboard und der eigene Kalender funktionieren weiterhin normal. Diese Option ist für besondere Situationen gedacht (z.B. Langzeitkrankheit, Elternzeit).</p>
+
+  <div class="callout callout-warn">
+    <span class="callout-icon">⚠️</span>
+    <div>Einstellungen immer mit <strong>Speichern</strong> bestätigen, sonst gehen Änderungen verloren.</div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     SECTION 9 — FAQ
+════════════════════════════════════════ -->
+<div class="section" id="s9">
+  <div class="section-header">
+    <div class="section-num">09</div>
+    <div class="section-title-wrap">
+      <h2>Häufige Fragen (FAQ)</h2>
+      <p>Antworten auf die wichtigsten Fragen</p>
+    </div>
+  </div>
+
+  <div class="faq-item">
+    <div class="faq-q">Muss ich jeden Tag eintragen?</div>
+    <div class="faq-a">Nein. Nur die Tage, die man eintragen möchte. Tage ohne Eintrag werden schlicht nicht gezählt — weder als Büro noch als Homeoffice. Es empfiehlt sich jedoch, regelmäßig einzutragen (z.B. täglich oder wöchentlich), damit das Dashboard immer aktuell ist.</div>
+  </div>
+
+  <div class="faq-item">
+    <div class="faq-q">Kann ich vergangene Monate nachträglich eintragen?</div>
+    <div class="faq-a">Ja. Mit den Pfeilen im Kalender können beliebige vergangene Monate aufgerufen und Einträge nachgetragen werden. Es gibt keine Sperren für vergangene Perioden.</div>
+  </div>
+
+  <div class="faq-item">
+    <div class="faq-q">Ich war krank — zählt das gegen meine Quote?</div>
+    <div class="faq-a">Nein. Krankheitstage werden als "Krank" eingetragen und reduzieren die Pflicht-Arbeitstage. Wer 5 Tage krank war, muss in diesem Monat 5 Tage weniger im Büro sein, um das 50%-Ziel zu erfüllen.</div>
+  </div>
+
+  <div class="faq-item">
+    <div class="faq-q">Ich war im Urlaub — wird die Quote automatisch angepasst?</div>
+    <div class="faq-a">Ja, sobald die Urlaubstage im Kalender eingetragen sind. Urlaub reduziert die Pflicht-Arbeitstage genau wie Krankheit und Gleittage.</div>
+  </div>
+
+  <div class="faq-item">
+    <div class="faq-q">Kann mein Vorgesetzter sehen, was ich eingetragen habe?</div>
+    <div class="faq-a">Nein. Niemand außer einem selbst kann die eigenen Einträge sehen. Die Team-Übersicht zeigt nur anonyme Aggregate (z.B. "Mitglied 3 hat 68%") — ohne Namen oder Zuordnung.</div>
+  </div>
+
+  <div class="faq-item">
+    <div class="faq-q">Ich arbeite Teilzeit — wie stelle ich das ein?</div>
+    <div class="faq-a">In den <strong>Einstellungen → Arbeitstage</strong> die nicht arbeitenden Wochentage deaktivieren. Das Tool berücksichtigt dann nur die gewählten Tage bei der Berechnung.</div>
+  </div>
+
+  <div class="faq-item">
+    <div class="faq-q">Was passiert, wenn ich einen Eintrag falsch gesetzt habe?</div>
+    <div class="faq-a">Einfach auf den Tag klicken und einen anderen Typ wählen — der alte Eintrag wird überschrieben. Oder auf "🗑 Eintrag löschen" klicken, um den Tag zurückzusetzen.</div>
+  </div>
+
+  <div class="faq-item">
+    <div class="faq-q">Wie lange kann ich auf das Tool zugreifen?</div>
+    <div class="faq-a">Die Session bleibt im Browser aktiv. Beim Schließen des Browsers oder nach längerer Inaktivität muss man sich neu anmelden (E-Mail + Passwort).</div>
+  </div>
+
+  <div class="faq-item">
+    <div class="faq-q">Was ist der Unterschied zwischen "Bis heute" und "Gesamter Monat" im Dashboard?</div>
+    <div class="faq-a"><strong>Bis heute (MTD):</strong> Zeigt die Quote vom 1. des Monats bis zum heutigen Tag — also den aktuellen Stand. <strong>Gesamter Monat:</strong> Zeigt die Quote über den gesamten Monat, also auch zukünftige (noch nicht eingetragene) Tage werden bereits in den Nenner einberechnet.</div>
+  </div>
+
+  <div class="faq-item">
+    <div class="faq-q">Feiertage in BW fehlen oder werden falsch angezeigt?</div>
+    <div class="faq-a">Das Tool enthält alle gesetzlichen Feiertage in Baden-Württemberg vorprogrammiert. Falls ein Feiertag nicht angezeigt wird, bitte eine Rückmeldung an den Administrator geben.</div>
+  </div>
+
+  <hr>
+  <div style="text-align:center; padding:32px 0; color:var(--muted); font-size:14px">
+    <div style="font-size:20px; margin-bottom:8px">📋</div>
+    <div>Anwesenheitsrechner · Schulungsunterlage v1.0 · Mai 2025</div>
+    <div style="margin-top:4px">Bei Fragen oder Problemen: Administrator kontaktieren</div>
+  </div>
+</div>
+
+</div><!-- /.page-wrap -->
+</body>
+</html>
