@@ -30,6 +30,23 @@ function renderSetupForm() {
         <label class="form-label">Teamname</label>
         <input type="text" class="form-input" id="inp-teamname" placeholder="z.B. Team Entwicklung" maxlength="60" />
       </div>
+      <div class="form-group">
+        <label class="form-label">Anwesenheitsquote</label>
+        <div style="display:flex;gap:8px">
+          ${[40,50,60].map(v => `
+            <label style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:10px;border:1px solid var(--border);border-radius:8px;cursor:pointer;font-size:14px;font-weight:600;transition:all .15s" id="lbl-target-${v}">
+              <input type="radio" name="presence-target" value="${v}" ${v===50?'checked':''} style="display:none" onchange="highlightTargetLabel()">
+              ${v}%
+            </label>`).join('')}
+          <label style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:10px;border:1px solid var(--border);border-radius:8px;cursor:pointer;font-size:14px;font-weight:600;transition:all .15s" id="lbl-target-custom">
+            <input type="radio" name="presence-target" value="custom" style="display:none" onchange="highlightTargetLabel()">
+            Individuell
+          </label>
+        </div>
+        <div id="custom-target-wrap" style="display:none;margin-top:8px">
+          <input type="number" id="inp-custom-target" class="form-input" min="1" max="100" placeholder="z.B. 45" style="text-align:center" />
+        </div>
+      </div>
       <div id="setup-error" class="form-error mb-8"></div>
       <button class="btn btn-primary btn-lg" style="width:100%" id="btn-erstellen" onclick="doCreateTeam()">
         Team erstellen →
@@ -38,6 +55,7 @@ function renderSetupForm() {
     document.getElementById('inp-teamname').addEventListener('keydown', e => {
       if (e.key === 'Enter') doCreateTeam();
     });
+    highlightTargetLabel();
   } else {
     wrap.innerHTML = `
       <div class="form-group">
@@ -63,16 +81,40 @@ window.switchSetupTab = function(tab) {
   renderSetupForm();
 };
 
+window.highlightTargetLabel = function() {
+  const allKeys = [40, 50, 60, 'custom'];
+  allKeys.forEach(v => {
+    const lbl = document.getElementById(`lbl-target-${v}`);
+    if (!lbl) return;
+    const checked = lbl.querySelector('input').checked;
+    lbl.style.borderColor = checked ? 'var(--primary)' : 'var(--border)';
+    lbl.style.background  = checked ? 'rgba(99,102,241,0.08)' : '';
+    lbl.style.color       = checked ? 'var(--primary)' : '';
+  });
+  const customChecked = document.querySelector('input[name="presence-target"][value="custom"]')?.checked;
+  const wrap = document.getElementById('custom-target-wrap');
+  if (wrap) wrap.style.display = customChecked ? 'block' : 'none';
+};
+
 window.doCreateTeam = async function() {
-  const name = document.getElementById('inp-teamname').value.trim();
-  const errEl = document.getElementById('setup-error');
-  const btn   = document.getElementById('btn-erstellen');
+  const name   = document.getElementById('inp-teamname').value.trim();
+  const errEl  = document.getElementById('setup-error');
+  const btn    = document.getElementById('btn-erstellen');
+  const selectedVal = document.querySelector('input[name="presence-target"]:checked')?.value || '50';
+  const rawTarget = selectedVal === 'custom'
+    ? parseInt(document.getElementById('inp-custom-target')?.value || '50')
+    : parseInt(selectedVal);
+  if (isNaN(rawTarget) || rawTarget < 1 || rawTarget > 100) {
+    errEl.textContent = 'Bitte eine gültige Quote zwischen 1 und 100 eingeben.';
+    return;
+  }
+  const target = rawTarget / 100;
 
   if (!name) { errEl.textContent = 'Bitte einen Teamnamen eingeben.'; return; }
 
   btn.textContent = 'Wird erstellt…'; btn.disabled = true;
 
-  const { error } = await supabase.rpc('create_team', { p_name: name });
+  const { error } = await supabase.rpc('create_team', { p_name: name, p_target: target });
 
   if (error) {
     errEl.textContent = 'Fehler: ' + error.message;

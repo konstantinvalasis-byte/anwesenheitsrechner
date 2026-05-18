@@ -1,6 +1,6 @@
 import { supabase } from '../supabase.js';
 import { renderNavbar } from '../components/navbar.js';
-import { calculateMonthStats, DAY_TYPES } from '../calculator.js';
+import { calculateMonthStats, DAY_TYPES, PRESENCE_TARGET } from '../calculator.js';
 import { getBWHolidays, dateKey } from '../holidays.js';
 import { getMonthState, setMonthState } from '../monthState.js';
 
@@ -54,12 +54,14 @@ async function loadData(profile) {
   const startDate = `${currentYear}-${String(currentMonth+1).padStart(2,'0')}-01`;
   const endDate   = `${currentYear}-${String(currentMonth+1).padStart(2,'0')}-${new Date(currentYear, currentMonth+1, 0).getDate()}`;
 
-  const { data: entries } = await supabase
-    .from('attendance')
-    .select('*')
-    .eq('member_id', profile.id)
-    .gte('date', startDate)
-    .lte('date', endDate);
+  const [{ data: entries }, { data: teamData }] = await Promise.all([
+    supabase.from('attendance').select('*').eq('member_id', profile.id).gte('date', startDate).lte('date', endDate),
+    profile.team_id
+      ? supabase.from('teams').select('presence_target').eq('id', profile.team_id).single()
+      : Promise.resolve({ data: null }),
+  ]);
+
+  const presenceTarget = teamData?.presence_target ?? PRESENCE_TARGET;
 
   const today = new Date();
   const todayStr = dateKey(today);
@@ -67,17 +69,19 @@ async function loadData(profile) {
     (currentYear === today.getFullYear() && currentMonth < today.getMonth());
 
   const workDays = profile.work_days || [1,2,3,4,5];
-  const statsFullMonth = calculateMonthStats(entries || [], currentYear, currentMonth, null, workDays);
+  const statsFullMonth = calculateMonthStats(entries || [], currentYear, currentMonth, null, workDays, presenceTarget);
   const statsMTD = !isPastMonth
-    ? calculateMonthStats(entries || [], currentYear, currentMonth, todayStr, workDays)
+    ? calculateMonthStats(entries || [], currentYear, currentMonth, todayStr, workDays, presenceTarget)
     : null;
 
-  renderStats(statsFullMonth, statsMTD, profile);
+  renderStats(statsFullMonth, statsMTD, profile, presenceTarget);
 }
 
-function renderStats(stats, statsMTD, profile) {
+function renderStats(stats, statsMTD, profile, presenceTarget = PRESENCE_TARGET) {
   const circumference = 2 * Math.PI * 90;
-  const targetOffset = circumference - (50 / 100) * circumference;
+  const targetPct = presenceTarget * 100;
+  const targetOffset = circumference - (presenceTarget) * circumference;
+  const warnThreshold = presenceTarget * 0.7 * 100;
 
   // Ring zeigt immer Gesamtmonat
   const ringStats = stats;
@@ -85,8 +89,8 @@ function renderStats(stats, statsMTD, profile) {
   const offsetRing = circumference - (pctRing / 100) * circumference;
 
   let statusClass = 'ok', statusText = '✅ Ziel erreicht!';
-  if (ringStats.percentage < 35) { statusClass = 'bad'; statusText = '⚠️ Deutlich unter Ziel'; }
-  else if (ringStats.percentage < 50) { statusClass = 'warn'; statusText = '🔶 Knapp unter 50%'; }
+  if (ringStats.percentage < warnThreshold) { statusClass = 'bad'; statusText = '⚠️ Deutlich unter Ziel'; }
+  else if (ringStats.percentage < targetPct) { statusClass = 'warn'; statusText = `🔶 Knapp unter ${targetPct}%`; }
 
   const ringColor = ringStats.targetMet ? '#10b981' : (ringStats.percentage >= 35 ? '#f59e0b' : '#ef4444');
 
@@ -176,7 +180,7 @@ function renderStats(stats, statsMTD, profile) {
           <span class="fw-bold">${stats.netWorkingDays}</span>
         </div>
         <div class="flex-between mt-8" style="font-size:14px">
-          <span class="text-muted">Erforderliche Präsenztage (50%)</span>
+          <span class="text-muted">Erforderliche Präsenztage (${targetPct}%)</span>
           <span class="fw-bold">${stats.requiredDays}</span>
         </div>
         <div class="flex-between mt-8" style="font-size:14px">

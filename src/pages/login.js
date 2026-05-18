@@ -90,6 +90,7 @@ export function renderLogin() {
       <!-- ── Right: Login Form ── -->
       <div class="login-form-panel">
         <div class="login-card">
+          <a href="#/about" style="display:block;text-align:right;font-size:0.8rem;color:var(--text-muted);margin-bottom:12px;text-decoration:none" onclick="navigate('about')">Über die App</a>
           <div class="login-logo">📊</div>
           <h2 class="login-title">Willkommen zurück</h2>
           <p class="login-subtitle">Melde dich an oder erstelle ein Konto.</p>

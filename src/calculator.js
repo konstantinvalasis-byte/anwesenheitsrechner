@@ -17,7 +17,7 @@ export const PRESENCE_TARGET = 0.5; // 50%
  * @param {number} year
  * @param {number} month - 0-indexed
  */
-export function calculateMonthStats(entries, year, month, toDate = null, workDays = [1,2,3,4,5]) {
+export function calculateMonthStats(entries, year, month, toDate = null, workDays = [1,2,3,4,5], presenceTarget = PRESENCE_TARGET) {
   const holidayMap = getBWHolidays(year);
   const daysInMonth = new Date(year, month + 1, 0).getDate();
 
@@ -66,7 +66,7 @@ export function calculateMonthStats(entries, year, month, toDate = null, workDay
   const netWorkingDays = Math.max(0, totalWorkingDays - absenceDays);
 
   // Required presence days (rounded up)
-  const requiredDays = Math.ceil(netWorkingDays * PRESENCE_TARGET);
+  const requiredDays = Math.ceil(netWorkingDays * presenceTarget);
 
   // Actual presence days
   const actualDays = counts.OFFICE;

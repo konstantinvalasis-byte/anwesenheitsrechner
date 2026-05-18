@@ -7,6 +7,7 @@ import { renderTeam } from './pages/team.js';
 import { renderSettings } from './pages/settings.js';
 import { renderTeamSetup } from './pages/team-setup.js';
 import { renderTeamManage } from './pages/team-manage.js';
+import { renderAbout } from './pages/about.js';
 
 // Sofort Lade-Indikator — #app bleibt nie leer
 document.getElementById('app').innerHTML =
@@ -30,6 +31,11 @@ async function router() {
 
   try {
     const hash = window.location.hash.replace('#/', '') || 'dashboard';
+
+    if (hash === 'about') {
+      renderAbout(currentProfile);
+      return;
+    }
 
     if (!currentUser) {
       renderLogin();
@@ -59,6 +65,7 @@ async function router() {
       settings:      () => renderSettings(currentProfile),
       'team-setup':  () => renderTeamSetup(currentProfile),
       'team-manage': () => renderTeamManage(currentProfile),
+      about:         () => renderAbout(currentProfile),
     };
 
     await (routes[hash] || routes['dashboard'])();

@@ -2,6 +2,7 @@ import { supabase } from '../supabase.js';
 import { renderNavbar } from '../components/navbar.js';
 import { getWorkingDays, dateKey } from '../holidays.js';
 import { getMonthState, setMonthState } from '../monthState.js';
+import { PRESENCE_TARGET } from '../calculator.js';
 
 const MONTH_NAMES = ['Januar','Februar','März','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember'];
 
@@ -44,16 +45,24 @@ async function loadTeam() {
   const todayStr = dateKey(today);
 
   // Aggregierte Tagestypen für die Balkenübersicht
-  const { data: statsData, error } = await supabase.rpc('get_team_stats', {
-    p_year: currentYear, p_month: currentMonth + 1
-  });
+  const [
+    { data: statsData, error },
+    { data: rawStats, error: rawError },
+    { data: teamData },
+  ] = await Promise.all([
+    supabase.rpc('get_team_stats', { p_year: currentYear, p_month: currentMonth + 1 }),
+    supabase.rpc('get_team_member_stats', {
+      p_year: currentYear,
+      p_month: currentMonth + 1,
+      ...(isCurrentMonth ? { p_today: todayStr } : {}),
+    }),
+    profile.team_id
+      ? supabase.from('teams').select('presence_target').eq('id', profile.team_id).single()
+      : Promise.resolve({ data: null }),
+  ]);
 
-  // Pro-Mitglied anonyme Rohdaten (office + absence Tage, MTD-gefiltert wenn aktueller Monat)
-  const { data: rawStats, error: rawError } = await supabase.rpc('get_team_member_stats', {
-    p_year: currentYear,
-    p_month: currentMonth + 1,
-    ...(isCurrentMonth ? { p_today: todayStr } : {}),
-  });
+  const presenceTarget = teamData?.presence_target ?? PRESENCE_TARGET;
+  const targetPct = Math.round(presenceTarget * 100);
 
   if (error || rawError) {
     document.getElementById('team-content').innerHTML = `
@@ -97,8 +106,8 @@ async function loadTeam() {
   (statsData || []).forEach(row => { typeCounts[row.type] = parseInt(row.total_days); });
 
   function teamSummary(mems) {
-    const above = mems.filter(m => m.percentage >= 50).length;
-    const below = mems.filter(m => m.percentage < 50).length;
+    const above = mems.filter(m => m.percentage >= targetPct).length;
+    const below = mems.filter(m => m.percentage < targetPct).length;
     const avg   = mems.length > 0
       ? Math.round(mems.reduce((s, m) => s + m.percentage, 0) / mems.length)
       : 0;
@@ -108,7 +117,8 @@ async function loadTeam() {
   const summary    = teamSummary(members);
   const summaryMTD = membersMTD ? teamSummary(membersMTD) : null;
 
-  const avgColor = summary.avg >= 50 ? '#10b981' : summary.avg >= 35 ? '#f59e0b' : '#ef4444';
+  const warnThreshold = Math.round(presenceTarget * 0.7 * 100);
+  const avgColor = summary.avg >= targetPct ? '#10b981' : summary.avg >= warnThreshold ? '#f59e0b' : '#ef4444';
 
   document.getElementById('team-content').innerHTML = `
     <div class="grid grid-3 team-stat-grid mb-24">
@@ -121,13 +131,13 @@ async function loadTeam() {
       <div class="stat-card" style="background:linear-gradient(135deg,rgba(16,185,129,0.15),rgba(16,185,129,0.05))">
         <div class="stat-icon">✅</div>
         <div class="stat-value text-success">${summary.above}</div>
-        <div class="stat-label">Mitglieder ≥ 50%</div>
+        <div class="stat-label">Mitglieder ≥ ${targetPct}%</div>
         ${summaryMTD ? renderMTDBadge(summaryMTD.above, summary.above, '') : ''}
       </div>
       <div class="stat-card" style="background:linear-gradient(135deg,rgba(239,68,68,0.15),rgba(239,68,68,0.05))">
         <div class="stat-icon">⚠️</div>
         <div class="stat-value text-danger">${summary.below}</div>
-        <div class="stat-label">Mitglieder < 50%</div>
+        <div class="stat-label">Mitglieder < ${targetPct}%</div>
         ${summaryMTD ? renderMTDBadge(summaryMTD.below, summary.below, '') : ''}
       </div>
     </div>
@@ -142,7 +152,7 @@ async function loadTeam() {
               .map((pair, i) => {
                 const m = pair.mtd ?? pair.full;
                 const pct = Math.min(m.percentage, 100);
-                const color = pct >= 50 ? '#10b981' : pct >= 35 ? '#f59e0b' : '#ef4444';
+                const color = pct >= targetPct ? '#10b981' : pct >= warnThreshold ? '#f59e0b' : '#ef4444';
                 return `
                   <div style="margin-bottom:14px">
                     <div class="flex-between text-sm mb-8">
@@ -156,7 +166,7 @@ async function loadTeam() {
               }).join('')}
         <div style="border-top:1px solid var(--border);margin-top:16px;padding-top:14px;display:flex;align-items:center;gap:8px">
           <div style="width:10px;height:3px;background:rgba(245,158,11,0.7);border-radius:2px"></div>
-          <span class="text-xs text-muted">50%-Ziel</span>
+          <span class="text-xs text-muted">${targetPct}%-Ziel</span>
         </div>
       </div>
 

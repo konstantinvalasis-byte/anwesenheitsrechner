@@ -44,6 +44,8 @@ export function renderNavbar(profile, activePage) {
       <a href="/docs/praesentation.html" target="_blank" rel="noopener">📊 Präsentation</a>
       <span class="app-footer-sep">·</span>
       <a href="/docs/schulung.html" target="_blank" rel="noopener">📖 Schulungsunterlage</a>
+      <span class="app-footer-sep">·</span>
+      <a href="#/about" onclick="navigate('about')">Über die App</a>
     </div>
   `;
 
