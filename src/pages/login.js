@@ -19,13 +19,13 @@ export function renderLogin() {
             <div class="login-logo-sm">📊</div>
             <span class="login-brand-name">Anwesenheitsrechner</span>
           </div>
-          <h1 class="login-headline">Deine Büropräsenz.<br><em>Immer im Blick.</em></h1>
-          <p class="login-hero-sub">Tracke deine 50%-Präsenzpflicht automatisch – ohne Excel, ohne Aufwand, DSGVO-konform.</p>
+          <h1 class="login-headline">Deine Büropräsenz.<br><em>Einfach im Griff.</em></h1>
+          <p class="login-hero-sub">Eine private Initiative von Konstantin Valasis — entstanden aus dem Wunsch, die eigene Präsenzpflicht unkompliziert zu tracken, ohne ständig Excel-Tabellen zu pflegen.</p>
           <ul class="login-features">
-            <li><span class="feat-check">✓</span>Automatische Feiertage &amp; Schulferien (BW)</li>
-            <li><span class="feat-check">✓</span>Echtzeit-Fortschritt mit Monats-Prognose</li>
-            <li><span class="feat-check">✓</span>Anonyme Team-Übersicht ohne Datenschutzrisiko</li>
-            <li><span class="feat-check">✓</span>Teilzeit &amp; individuelle Arbeitstage unterstützt</li>
+            <li><span class="feat-check">✓</span>Privat entwickelt, extern gehostet — keine Verbindung zu Mercedes</li>
+            <li><span class="feat-check">✓</span>Nur für den eigenen Überblick — kein Gedanke daran, andere zu tracken</li>
+            <li><span class="feat-check">✓</span>Kein Anspruch, Führungskräfte-Aufgaben zu ersetzen — reine Selbsthilfe</li>
+            <li><span class="feat-check">✓</span>Team-Funktion optional: gemeinsam den Überblick behalten, anonym</li>
           </ul>
           <div class="login-resources">
             <div class="preview-label">Ressourcen</div>
