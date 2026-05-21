@@ -2,6 +2,7 @@ import { supabase } from '../supabase.js';
 import { showToast } from '../components/toast.js';
 
 let currentTab = 'login';
+let forgotSent = false;
 
 export function renderLogin() {
   document.getElementById('app').innerHTML = `
@@ -94,7 +95,7 @@ export function renderLogin() {
           <div class="login-logo">📊</div>
           <h2 class="login-title">Willkommen zurück</h2>
           <p class="login-subtitle">Melde dich an oder erstelle ein Konto.</p>
-          <div class="login-tabs">
+          <div class="login-tabs" id="login-tabs">
             <button class="login-tab active" id="tab-login" onclick="switchTab('login')">Anmelden</button>
             <button class="login-tab" id="tab-register" onclick="switchTab('register')">Registrieren</button>
           </div>
@@ -123,8 +124,42 @@ function renderLoginForm() {
       <button class="btn btn-primary btn-lg" style="width:100%" id="btn-login" onclick="doLogin()">
         Anmelden →
       </button>
+      <div style="text-align:center;margin-top:12px">
+        <button type="button" onclick="switchTab('forgot')" style="background:none;border:none;color:var(--text-muted);font-size:0.85rem;cursor:pointer;text-decoration:underline;padding:0">
+          Passwort vergessen?
+        </button>
+      </div>
     `;
     document.getElementById('inp-pass').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+  } else if (currentTab === 'forgot') {
+    wrap.innerHTML = forgotSent ? `
+      <div class="form-success" style="text-align:center;padding:16px 0">
+        <div style="font-size:2rem;margin-bottom:8px">📬</div>
+        <p style="color:var(--text);margin-bottom:4px">E-Mail verschickt!</p>
+        <p style="color:var(--text-muted);font-size:0.875rem">Bitte prüfe dein Postfach und klicke auf den Link, um ein neues Passwort zu setzen.</p>
+        <button type="button" onclick="switchTab('login')" style="margin-top:16px;background:none;border:none;color:var(--primary);font-size:0.875rem;cursor:pointer;text-decoration:underline;padding:0">
+          Zurück zur Anmeldung
+        </button>
+      </div>
+    ` : `
+      <p style="color:var(--text-muted);font-size:0.875rem;margin-bottom:16px">Gib deine E-Mail-Adresse ein. Wir schicken dir einen Link zum Zurücksetzen deines Passworts.</p>
+      <div class="form-group">
+        <label class="form-label">E-Mail</label>
+        <input type="email" class="form-input" id="inp-email" placeholder="dein@name.de" autocomplete="email" />
+      </div>
+      <div id="login-error" class="form-error mb-8"></div>
+      <button class="btn btn-primary btn-lg" style="width:100%" id="btn-forgot" onclick="doForgotPassword()">
+        Reset-Link anfordern →
+      </button>
+      <div style="text-align:center;margin-top:12px">
+        <button type="button" onclick="switchTab('login')" style="background:none;border:none;color:var(--text-muted);font-size:0.85rem;cursor:pointer;text-decoration:underline;padding:0">
+          Zurück zur Anmeldung
+        </button>
+      </div>
+    `;
+    if (!forgotSent) {
+      document.getElementById('inp-email').addEventListener('keydown', e => { if (e.key === 'Enter') doForgotPassword(); });
+    }
   } else {
     wrap.innerHTML = `
       <div class="form-group">
@@ -149,8 +184,13 @@ function renderLoginForm() {
 
 window.switchTab = function(tab) {
   currentTab = tab;
-  document.getElementById('tab-login').classList.toggle('active', tab === 'login');
-  document.getElementById('tab-register').classList.toggle('active', tab === 'register');
+  if (tab === 'forgot') forgotSent = false;
+  const tabs = document.getElementById('login-tabs');
+  if (tabs) tabs.style.display = tab === 'forgot' ? 'none' : '';
+  const tabLogin    = document.getElementById('tab-login');
+  const tabRegister = document.getElementById('tab-register');
+  if (tabLogin)    tabLogin.classList.toggle('active', tab === 'login');
+  if (tabRegister) tabRegister.classList.toggle('active', tab === 'register');
   renderLoginForm();
 };
 
@@ -196,4 +236,27 @@ window.doRegister = async function() {
 
   showToast('✅ Konto erstellt! Du kannst dich jetzt anmelden.', 'success');
   setTimeout(() => window.switchTab('login'), 1500);
+};
+
+window.doForgotPassword = async function() {
+  const email = document.getElementById('inp-email').value.trim();
+  const errEl = document.getElementById('login-error');
+  const btn   = document.getElementById('btn-forgot');
+
+  if (!email) { errEl.textContent = 'Bitte E-Mail-Adresse eingeben.'; return; }
+
+  btn.textContent = 'Wird gesendet…'; btn.disabled = true;
+
+  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: window.location.origin + window.location.pathname,
+  });
+
+  if (error) {
+    errEl.textContent = 'Fehler: ' + error.message;
+    btn.textContent = 'Reset-Link anfordern →'; btn.disabled = false;
+    return;
+  }
+
+  forgotSent = true;
+  renderLoginForm();
 };
