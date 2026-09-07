@@ -136,9 +136,9 @@ function renderContent(monthStats, targetPct, entries) {
           <div class="kpi-item-value">${totalOfficeDays}</div>
           <div class="kpi-item-label">Bürotage im Jahr</div>
         </div>
-        <div class="kpi-item">
-          <div class="kpi-item-value">${homeOfficeQuote}%</div>
-          <div class="kpi-item-label">Home-Office-Quote</div>
+        <div class="kpi-item" title="${homeOfficeQuote}% aller genutzten Anwesenheitstage">
+          <div class="kpi-item-value">${totalRemoteDays}</div>
+          <div class="kpi-item-label">Home-Office-Tage</div>
         </div>
         <div class="kpi-item" title="${totalVacationDays} Urlaub · ${totalSickDays} Krank · ${totalFlexDays} Gleittag">
           <div class="kpi-item-value">${totalVacationDays + totalSickDays + totalFlexDays}</div>
