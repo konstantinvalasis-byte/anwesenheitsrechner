@@ -85,7 +85,8 @@ DROP POLICY IF EXISTS attendance_admin_sel ON public.attendance;
 CREATE POLICY attendance_own_all ON public.attendance FOR ALL TO authenticated
   USING (member_id = auth.uid()) WITH CHECK (member_id = auth.uid());
 
-CREATE OR REPLACE FUNCTION public.create_team(p_name TEXT, p_target NUMERIC DEFAULT 0.5)
+DROP FUNCTION IF EXISTS public.create_team(TEXT, NUMERIC);
+CREATE FUNCTION public.create_team(p_name TEXT, p_target NUMERIC DEFAULT 0.5)
 RETURNS UUID LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, pg_temp AS $$
 DECLARE v_team_id UUID;
 BEGIN
@@ -102,7 +103,8 @@ BEGIN
 END;
 $$;
 
-CREATE OR REPLACE FUNCTION public.join_team_by_code(p_code TEXT)
+DROP FUNCTION IF EXISTS public.join_team_by_code(TEXT);
+CREATE FUNCTION public.join_team_by_code(p_code TEXT)
 RETURNS BOOLEAN LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, pg_temp AS $$
 DECLARE v_team_id UUID;
 BEGIN
@@ -115,7 +117,8 @@ BEGIN
 END;
 $$;
 
-CREATE OR REPLACE FUNCTION public.get_team_members()
+DROP FUNCTION IF EXISTS public.get_team_members();
+CREATE FUNCTION public.get_team_members()
 RETURNS TABLE(name TEXT, role TEXT)
 LANGUAGE sql SECURITY DEFINER SET search_path = public, pg_temp AS $$
   SELECT p.name, p.role
