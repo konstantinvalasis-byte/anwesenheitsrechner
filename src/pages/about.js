@@ -4,6 +4,7 @@ const CHANGELOG = [
   {
     date: 'September 2026',
     items: [
+      'Registrierung ohne Team möglich, Teambeitritt kann später erfolgen',
       'Jahresübersicht, Team-Kalender und Serieneintrag hinzugefügt',
       'Statistik-Bugs behoben und Sicherheitslücke (XSS) geschlossen',
       'Schema-Fehler bei Datenbank-Migration behoben'
