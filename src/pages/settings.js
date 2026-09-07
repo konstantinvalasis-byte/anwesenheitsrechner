@@ -43,7 +43,8 @@ export async function renderSettings(profile) {
                 <span style="font-size:15px;font-weight:600;color:var(--text-primary)">${escapeHtml(teamName)}</span>
                 <span class="badge badge-success" style="font-size:11px">Aktiv</span>
                </div>`
-            : `<p class="text-muted text-sm">Du bist in keinem Team.</p>`
+            : `<p class="text-muted text-sm" style="margin-bottom:10px">Du bist in keinem Team.</p>
+               <button class="btn btn-primary btn-sm" onclick="navigate('team-setup')">Team erstellen oder beitreten</button>`
           }
         </div>
 

@@ -15,7 +15,8 @@ export function renderTeamSetup() {
           <button class="login-tab" id="tab-beitreten" onclick="switchSetupTab('beitreten')">Team beitreten</button>
         </div>
         <div id="setup-form-wrap"></div>
-        <button class="btn btn-setup-logout" style="width:100%;margin-top:12px;background:none;border:none;color:var(--text-muted);font-size:13px;cursor:pointer;padding:8px" onclick="doLogoutFromSetup()">Abmelden</button>
+        <button class="btn btn-setup-logout" style="width:100%;margin-top:4px;background:none;border:none;color:var(--text-muted);font-size:13px;cursor:pointer;padding:8px" onclick="navigate('dashboard')">Später entscheiden</button>
+        <button class="btn btn-setup-logout" style="width:100%;margin-top:0;background:none;border:none;color:var(--text-muted);font-size:13px;cursor:pointer;padding:8px" onclick="doLogoutFromSetup()">Abmelden</button>
       </div>
     </div>
   `;

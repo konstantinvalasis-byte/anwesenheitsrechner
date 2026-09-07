@@ -121,12 +121,6 @@ async function router() {
 
     if (seq !== renderSeq) return;
 
-    // Neuer User ohne Team → zum Onboarding
-    if (!currentProfile.team_id && hash !== 'team-setup') {
-      window.location.hash = '#/team-setup';
-      return;
-    }
-
     const routes = {
       dashboard:     () => renderDashboard(currentProfile),
       calendar:      () => renderCalendar(currentProfile),

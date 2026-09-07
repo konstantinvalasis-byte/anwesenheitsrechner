@@ -3,6 +3,7 @@ import { showToast } from './toast.js';
 
 export function renderNavbar(profile, activePage) {
   const isErsteller = profile?.role === 'ersteller';
+  const hasTeam = !!profile?.team_id;
   const initials = (profile?.name || 'U').split(' ').map(p => p[0]).join('').toUpperCase().slice(0, 2);
 
   const navEl = document.getElementById('navbar');
@@ -16,7 +17,7 @@ export function renderNavbar(profile, activePage) {
     <nav class="navbar-nav">
       <button class="nav-link ${activePage==='dashboard'?'active':''}" onclick="navigate('dashboard')">🏠 Dashboard</button>
       <button class="nav-link ${activePage==='calendar'?'active':''}" onclick="navigate('calendar')">📅 Kalender</button>
-      <button class="nav-link ${activePage==='team'?'active':''}" onclick="navigate('team')">👥 Team</button>
+      ${hasTeam ? `<button class="nav-link ${activePage==='team'?'active':''}" onclick="navigate('team')">👥 Team</button>` : ''}
       <button class="nav-link ${activePage==='year'?'active':''}" onclick="navigate('year')">📈 Jahr</button>
     </nav>
     <div class="navbar-actions">
@@ -65,9 +66,9 @@ export function renderNavbar(profile, activePage) {
     <button class="bottom-nav-btn ${activePage==='calendar'?'active':''}" onclick="navigate('calendar')">
       <span class="nav-icon">📅</span><span class="nav-label">Kalender</span>
     </button>
-    <button class="bottom-nav-btn ${activePage==='team'?'active':''}" onclick="navigate('team')">
+    ${hasTeam ? `<button class="bottom-nav-btn ${activePage==='team'?'active':''}" onclick="navigate('team')">
       <span class="nav-icon">👥</span><span class="nav-label">Team</span>
-    </button>
+    </button>` : ''}
     <button class="bottom-nav-btn ${activePage==='year'?'active':''}" onclick="navigate('year')">
       <span class="nav-icon">📈</span><span class="nav-label">Jahr</span>
     </button>
