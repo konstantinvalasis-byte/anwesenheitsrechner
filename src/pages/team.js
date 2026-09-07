@@ -1,6 +1,6 @@
 import { supabase } from '../supabase.js';
 import { renderNavbar } from '../components/navbar.js';
-import { getWorkingDays, dateKey } from '../holidays.js';
+import { getWorkingDays, getBWHolidays, dateKey } from '../holidays.js';
 import { getMonthState, setMonthState } from '../monthState.js';
 import { PRESENCE_TARGET } from '../calculator.js';
 
@@ -43,17 +43,20 @@ async function loadTeam() {
   const today = new Date();
   const isCurrentMonth = currentYear === today.getFullYear() && currentMonth === today.getMonth();
   const todayStr = dateKey(today);
+  const holidays = [...getBWHolidays(currentYear).keys()]
+    .filter(date => date.startsWith(`${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-`));
 
   // Aggregierte Tagestypen für die Balkenübersicht
   const [
     { data: statsData, error },
     { data: rawStats, error: rawError },
-    { data: teamData },
+    { data: teamData, error: teamError },
   ] = await Promise.all([
-    supabase.rpc('get_team_stats', { p_year: currentYear, p_month: currentMonth + 1 }),
+    supabase.rpc('get_team_stats', { p_year: currentYear, p_month: currentMonth + 1, p_holidays: holidays }),
     supabase.rpc('get_team_member_stats', {
       p_year: currentYear,
       p_month: currentMonth + 1,
+      p_holidays: holidays,
       ...(isCurrentMonth ? { p_today: todayStr } : {}),
     }),
     profile.team_id
@@ -64,7 +67,7 @@ async function loadTeam() {
   const presenceTarget = teamData?.presence_target ?? PRESENCE_TARGET;
   const targetPct = Math.round(presenceTarget * 100);
 
-  if (error || rawError) {
+  if (error || rawError || teamError) {
     document.getElementById('team-content').innerHTML = `
       <div class="alert alert-warning">⚠️ Team-Daten konnten nicht geladen werden. Bitte prüfe die Datenbankfunktionen.</div>`;
     return;
@@ -84,7 +87,11 @@ async function loadTeam() {
       const officeDays  = useMTD ? Number(m.office_days_mtd)  : Number(m.office_days);
       const absenceDays = useMTD ? Number(m.absence_days_mtd) : Number(m.absence_days);
       const net = Math.max(memberTotal - absenceDays, 0);
-      return { percentage: net > 0 ? Math.round(officeDays / net * 100) : 0 };
+      return {
+        percentage: net > 0 ? Math.round(officeDays / net * 100) : 0,
+        officeDays,
+        net,
+      };
     });
   }
 
@@ -108,9 +115,9 @@ async function loadTeam() {
   function teamSummary(mems) {
     const above = mems.filter(m => m.percentage >= targetPct).length;
     const below = mems.filter(m => m.percentage < targetPct).length;
-    const avg   = mems.length > 0
-      ? Math.round(mems.reduce((s, m) => s + m.percentage, 0) / mems.length)
-      : 0;
+    const totalOffice = mems.reduce((s, m) => s + m.officeDays, 0);
+    const totalNet    = mems.reduce((s, m) => s + m.net, 0);
+    const avg = totalNet > 0 ? Math.round(totalOffice / totalNet * 100) : 0;
     return { above, below, avg };
   }
 
@@ -225,6 +232,13 @@ async function loadTeam() {
               <div>
                 <div style="font-size:14px;font-weight:600;color:var(--text-primary)">Quote berechnen</div>
                 <div style="font-size:13px;color:var(--text-muted);margin-top:2px">Bürotage ÷ Netto-Arbeitstage × 100</div>
+              </div>
+            </div>
+            <div style="display:flex;gap:12px;align-items:flex-start">
+              <div style="min-width:24px;height:24px;border-radius:50%;background:rgba(99,102,241,0.15);color:#6366f1;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center">4</div>
+              <div>
+                <div style="font-size:14px;font-weight:600;color:var(--text-primary)">Team-Durchschnitt bilden</div>
+                <div style="font-size:13px;color:var(--text-muted);margin-top:2px">Summe Bürotage ÷ Summe Arbeitstage aller Mitglieder (gewichteter Durchschnitt)</div>
               </div>
             </div>
           </div>

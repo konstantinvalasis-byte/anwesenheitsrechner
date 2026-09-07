@@ -88,8 +88,16 @@ async function loadCalendar() {
   const start = `${currentYear}-${String(currentMonth+1).padStart(2,'0')}-01`;
   const end   = `${currentYear}-${String(currentMonth+1).padStart(2,'0')}-${new Date(currentYear,currentMonth+1,0).getDate()}`;
 
-  const { data } = await supabase.from('attendance').select('*')
+  const { data, error } = await supabase.from('attendance').select('*')
     .eq('member_id', profile.id).gte('date', start).lte('date', end);
+  if (error) {
+    console.error('[Calendar] Einträge konnten nicht geladen werden:', error);
+    entries = [];
+    document.getElementById('calendar-grid').innerHTML =
+      '<div class="alert alert-warning">⚠️ Einträge konnten nicht geladen werden. Bitte versuche es erneut.</div>';
+    renderHolidays();
+    return;
+  }
   entries = data || [];
 
   renderGrid();

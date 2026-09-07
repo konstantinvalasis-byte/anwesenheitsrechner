@@ -21,7 +21,7 @@ export function renderNavbar(profile, activePage) {
     <div class="navbar-actions">
       <div class="user-badge" onclick="navigate('settings')" style="cursor:pointer" title="Einstellungen">
         <div class="avatar">${initials}</div>
-        <span>${profile?.name || 'Benutzer'}</span>
+        <span>${escapeHtml(profile?.name || 'Benutzer')}</span>
       </div>
       ${isErsteller ? `<button class="navbar-admin-btn ${activePage==='team-manage'?'active':''}" onclick="navigate('team-manage')" title="Team verwalten">
         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
@@ -87,3 +87,7 @@ window.doLogout = async function() {
   await supabase.auth.signOut();
   showToast('👋 Erfolgreich abgemeldet.', 'info');
 };
+
+function escapeHtml(str) {
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}

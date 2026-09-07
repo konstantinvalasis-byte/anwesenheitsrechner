@@ -54,12 +54,19 @@ async function loadData(profile) {
   const startDate = `${currentYear}-${String(currentMonth+1).padStart(2,'0')}-01`;
   const endDate   = `${currentYear}-${String(currentMonth+1).padStart(2,'0')}-${new Date(currentYear, currentMonth+1, 0).getDate()}`;
 
-  const [{ data: entries }, { data: teamData }] = await Promise.all([
+  const [{ data: entries, error: entriesError }, { data: teamData, error: teamError }] = await Promise.all([
     supabase.from('attendance').select('*').eq('member_id', profile.id).gte('date', startDate).lte('date', endDate),
     profile.team_id
       ? supabase.from('teams').select('presence_target').eq('id', profile.team_id).single()
       : Promise.resolve({ data: null }),
   ]);
+
+  if (entriesError || teamError) {
+    console.error('[Dashboard] Daten konnten nicht geladen werden:', entriesError || teamError);
+    document.getElementById('dashboard-content').innerHTML =
+      '<div class="alert alert-warning">⚠️ Daten konnten nicht geladen werden. Bitte versuche es erneut.</div>';
+    return;
+  }
 
   const presenceTarget = teamData?.presence_target ?? PRESENCE_TARGET;
 
@@ -92,7 +99,7 @@ function renderStats(stats, statsMTD, profile, presenceTarget = PRESENCE_TARGET)
   if (ringStats.percentage < warnThreshold) { statusClass = 'bad'; statusText = '⚠️ Deutlich unter Ziel'; }
   else if (ringStats.percentage < targetPct) { statusClass = 'warn'; statusText = `🔶 Knapp unter ${targetPct}%`; }
 
-  const ringColor = ringStats.targetMet ? '#10b981' : (ringStats.percentage >= 35 ? '#f59e0b' : '#ef4444');
+  const ringColor = ringStats.targetMet ? '#10b981' : (ringStats.percentage >= warnThreshold ? '#f59e0b' : '#ef4444');
 
   const holidayMap = getBWHolidays(currentYear);
   const monthPrefix = `${currentYear}-${String(currentMonth+1).padStart(2,'0')}`;
@@ -127,7 +134,7 @@ function renderStats(stats, statsMTD, profile, presenceTarget = PRESENCE_TARGET)
           <div style="font-size:15px;font-weight:600">${ringStats.actualDays} von ${ringStats.requiredDays} Tagen</div>
           <div class="text-muted text-sm">Ziel: ${ringStats.requiredDays} Bürotage diesen Monat</div>
         </div>
-        ${statsMTD ? renderQuoteBadges(statsMTD, stats) : ''}
+        ${statsMTD ? renderQuoteBadges(statsMTD, stats, warnThreshold) : ''}
       </div>
 
       <!-- Stats Grid -->
@@ -208,15 +215,15 @@ function renderStats(stats, statsMTD, profile, presenceTarget = PRESENCE_TARGET)
   `;
 }
 
-function renderQuoteBadges(statsMTD, statsFullMonth) {
+function renderQuoteBadges(statsMTD, statsFullMonth, warnThreshold) {
   function badge(label, s) {
-    const color = s.targetMet ? '#10b981' : (s.percentage >= 35 ? '#f59e0b' : '#ef4444');
-    const icon  = s.targetMet ? '✅' : (s.percentage >= 35 ? '⚠️' : '❌');
+    const color = s.targetMet ? '#10b981' : (s.percentage >= warnThreshold ? '#f59e0b' : '#ef4444');
+    const icon  = s.targetMet ? '✅' : (s.percentage >= warnThreshold ? '⚠️' : '❌');
     return `
       <div style="flex:1;background:var(--bg-secondary);border-radius:12px;padding:12px 14px;text-align:center;min-width:120px;display:flex;flex-direction:column;align-items:center;justify-content:center">
         <div style="font-size:11px;font-weight:600;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.05em;min-height:28px;display:flex;align-items:center;justify-content:center;margin-bottom:4px">${label}</div>
         <div style="font-size:22px;font-weight:800;color:${color};line-height:1">${s.percentage}%</div>
-        <div style="font-size:12px;margin-top:4px;white-space:nowrap">${icon} ${s.targetMet ? 'Ziel erreicht' : (s.percentage >= 35 ? 'Knapp drunter' : 'Unter Ziel')}</div>
+        <div style="font-size:12px;margin-top:4px;white-space:nowrap">${icon} ${s.targetMet ? 'Ziel erreicht' : (s.percentage >= warnThreshold ? 'Knapp drunter' : 'Unter Ziel')}</div>
       </div>`;
   }
   return `

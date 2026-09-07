@@ -51,10 +51,14 @@ export function calculateMonthStats(entries, year, month, toDate = null, workDay
   };
 
   const entryMap = {};
+  const seenDates = new Set();
   (entries || []).forEach(e => {
     if (toDate && e.date > toDate) return;
+    if (!e.date.startsWith(`${year}-${String(month + 1).padStart(2, '0')}-`)) return;
     const dow = new Date(e.date + 'T12:00:00').getDay();
     if (!workDays.includes(dow)) return; // Eintrag auf Nicht-Arbeitstag ignorieren
+    if (holidayMap.has(e.date) || seenDates.has(e.date)) return;
+    seenDates.add(e.date);
     if (counts.hasOwnProperty(e.type)) {
       counts[e.type]++;
     }

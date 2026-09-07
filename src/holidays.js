@@ -111,7 +111,8 @@ export function getWorkingDays(year, month, workDays = [1,2,3,4,5]) {
 }
 
 /**
- * BW Schulferien — hardcodierte Daten (offiziell für 2024/2025, vorläufig für 2026)
+ * Offizielle landesweite BW-Schulferien bis zum Schuljahr 2029/2030.
+ * Bewegliche Ferientage (z. B. örtliche Fastnachtsferien) sind nicht enthalten.
  */
 const BW_SCHULFERIEN = [
   // 2024
@@ -123,13 +124,12 @@ const BW_SCHULFERIEN = [
   { name: 'Sommerferien',      start: '2025-07-31', end: '2025-09-13' },
   { name: 'Herbstferien',      start: '2025-10-27', end: '2025-10-31' },
   { name: 'Weihnachtsferien',  start: '2025-12-22', end: '2026-01-05' },
-  // 2026 (vorläufig)
-  { name: 'Fastnachtsferien', start: '2026-02-16', end: '2026-02-18' },
+  // 2026
   { name: 'Osterferien',       start: '2026-03-30', end: '2026-04-11' },
-  { name: 'Pfingstferien',     start: '2026-05-26', end: '2026-06-06' },
+  { name: 'Pfingstferien',     start: '2026-05-26', end: '2026-06-05' },
   { name: 'Sommerferien',      start: '2026-07-30', end: '2026-09-12' },
   { name: 'Herbstferien',      start: '2026-10-26', end: '2026-10-30' },
-  { name: 'Weihnachtsferien',  start: '2026-12-23', end: '2027-01-04' },
+  { name: 'Weihnachtsferien',  start: '2026-12-23', end: '2027-01-09' },
   // 2027
   { name: 'Osterferien',       start: '2027-03-30', end: '2027-04-03' },
   { name: 'Pfingstferien',     start: '2027-05-18', end: '2027-05-29' },
@@ -142,6 +142,16 @@ const BW_SCHULFERIEN = [
   { name: 'Sommerferien',      start: '2028-07-27', end: '2028-09-09' },
   { name: 'Herbstferien',      start: '2028-10-30', end: '2028-11-03' },
   { name: 'Weihnachtsferien',  start: '2028-12-23', end: '2029-01-05' },
+  // 2029
+  { name: 'Osterferien',       start: '2029-03-26', end: '2029-04-07' },
+  { name: 'Pfingstferien',     start: '2029-05-22', end: '2029-06-01' },
+  { name: 'Sommerferien',      start: '2029-07-26', end: '2029-09-08' },
+  { name: 'Herbstferien',      start: '2029-10-29', end: '2029-11-02' },
+  { name: 'Weihnachtsferien',  start: '2029-12-22', end: '2030-01-05' },
+  // 2030
+  { name: 'Osterferien',       start: '2030-04-15', end: '2030-04-26' },
+  { name: 'Pfingstferien',     start: '2030-06-11', end: '2030-06-21' },
+  { name: 'Sommerferien',      start: '2030-07-25', end: '2030-09-07' },
 ];
 
 /**
