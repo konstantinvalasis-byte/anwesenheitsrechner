@@ -138,6 +138,12 @@ body {
   gap: 20px;
   align-items: stretch;
 }
+.layout-stats-sidebar {
+  display: grid;
+  grid-template-columns: 1fr 300px;
+  gap: 20px;
+  align-items: start;
+}
 
 /* ── Bottom Nav (Mobile) ── */
 .bottom-nav {
@@ -147,7 +153,7 @@ body {
 
 @media (max-width: 768px) {
   .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
-  .layout-dashboard, .layout-calendar-sidebar { grid-template-columns: 1fr; }
+  .layout-dashboard, .layout-calendar-sidebar, .layout-stats-sidebar { grid-template-columns: 1fr; }
   .navbar-nav { display: none; }
 
   /* Navbar kompakter */
@@ -271,6 +277,22 @@ body {
 .stat-icon { font-size: 24px; }
 .stat-value { font-size: 32px; font-weight: 800; line-height: 1; }
 .stat-label { font-size: 13px; color: var(--text-secondary); font-weight: 500; }
+
+/* ── Ruhige KPI-Leiste: eine Fläche statt vieler einzelner Kästen ── */
+.kpi-bar { display: flex; flex-wrap: wrap; }
+.kpi-item {
+  flex: 1 1 130px; padding: 0 20px; border-left: 1px solid var(--border);
+}
+.kpi-item:first-child { border-left: none; padding-left: 0; }
+.kpi-item-value { font-size: 21px; font-weight: 800; line-height: 1.25; white-space: nowrap; }
+.kpi-item-label {
+  font-size: 12px; color: var(--text-muted); margin-top: 2px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+@media (max-width: 768px) {
+  .kpi-bar { gap: 16px 0; }
+  .kpi-item { flex: 1 1 42%; border-left: none; padding: 0; }
+}
 
 /* ── Progress Ring ── */
 .progress-ring-wrap {
@@ -618,6 +640,15 @@ body {
   font-size: 14px; font-weight: 600; cursor: pointer; transition: var(--transition); font-family: inherit;
 }
 .login-tab.active { background: var(--accent); color: white; }
+
+/* ── Ansicht-Umschalter (z.B. Persönlich/Team-Statistiken) ── */
+.view-toggle { display: flex; gap: 4px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 999px; padding: 3px; }
+.view-toggle-btn {
+  padding: 7px 16px; border-radius: 999px; border: none; background: none;
+  color: var(--text-secondary); font-size: 13px; font-weight: 600; cursor: pointer;
+  transition: var(--transition); font-family: inherit; white-space: nowrap;
+}
+.view-toggle-btn.active { background: var(--accent); color: #fff; }
 
 /* Mobile: Stack vertically */
 @media (max-width: 900px) {

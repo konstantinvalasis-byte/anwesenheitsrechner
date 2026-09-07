@@ -20,11 +20,14 @@ export async function renderTeamYearOverview(prof) {
       <div class="container">
         <div class="page-header flex-between">
           <div>
-            <h1 class="page-title">📈 Team-Jahresübersicht</h1>
+            <h1 class="page-title">📊 Team-Statistiken</h1>
             <p class="page-subtitle">Anonyme Anwesenheitsquote des Teams pro Monat – keine individuellen Daten sichtbar</p>
           </div>
           <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
-            <button class="btn btn-ghost btn-sm" onclick="navigate('year')">👤 Meine Jahresübersicht</button>
+            <div class="view-toggle">
+              <button class="view-toggle-btn" onclick="navigate('year')">👤 Persönlich</button>
+              <button class="view-toggle-btn active">👥 Team</button>
+            </div>
             <div class="month-selector">
               <button class="month-btn" id="btn-prev-year">‹</button>
               <span class="month-display" id="year-display"></span>
@@ -48,14 +51,15 @@ async function loadYear() {
 
   const holidays = [...getBWHolidays(currentYear).keys()];
 
-  const [{ data: rows, error }, { data: teamData, error: teamError }] = await Promise.all([
+  const [{ data: rows, error }, { data: weekdayRows, error: weekdayError }, { data: teamData, error: teamError }] = await Promise.all([
     supabase.rpc('get_team_year_stats', { p_year: currentYear, p_holidays: holidays }),
+    supabase.rpc('get_team_weekday_stats', { p_year: currentYear, p_holidays: holidays }),
     profile.team_id
       ? supabase.from('teams').select('presence_target').eq('id', profile.team_id).single()
       : Promise.resolve({ data: null }),
   ]);
 
-  if (error || teamError) {
+  if (error || weekdayError || teamError) {
     document.getElementById('year-content').innerHTML =
       '<div class="alert alert-warning">⚠️ Team-Daten konnten nicht geladen werden. Bitte versuche es erneut.</div>';
     return;
@@ -69,6 +73,7 @@ async function loadYear() {
   (rows || []).forEach(r => { byMonth[r.month] = r; });
 
   const monthStats = [];
+  let totalRemoteDays = 0, totalVacationDays = 0, totalFlexDays = 0, totalSickDays = 0, totalOfficeDays = 0;
   for (let m = 0; m < 12; m++) {
     const isFuture = currentYear > today.getFullYear() ||
       (currentYear === today.getFullYear() && m > today.getMonth());
@@ -80,48 +85,98 @@ async function loadYear() {
     const percentage = netDays > 0 ? Math.round(officeDays / netDays * 100) : 0;
     const hasData = officeDays + absenceDays > 0;
     monthStats.push({ month: m, isFuture, hasData, percentage, targetMet: netDays > 0 && percentage >= targetPct });
+    totalOfficeDays += officeDays;
+    totalRemoteDays += row ? Number(row.remote_days) : 0;
+    totalVacationDays += row ? Number(row.vacation_days) : 0;
+    totalFlexDays += row ? Number(row.flex_days) : 0;
+    totalSickDays += row ? Number(row.sick_days) : 0;
   }
 
-  renderContent(monthStats, targetPct);
+  const weekdayOffice = [0,0,0,0,0,0,0];
+  (weekdayRows || []).forEach(r => { weekdayOffice[r.weekday % 7] = Number(r.office_days); });
+
+  const totals = { totalOfficeDays, totalRemoteDays, totalVacationDays, totalFlexDays, totalSickDays };
+  renderContent(monthStats, targetPct, totals, weekdayOffice);
 }
 
-function renderContent(monthStats, targetPct) {
+const WEEKDAY_NAMES = ['So','Mo','Di','Mi','Do','Fr','Sa'];
+
+function renderContent(monthStats, targetPct, totals, weekdayOffice) {
   const pastOrCurrent = monthStats.filter(s => !s.isFuture && s.hasData);
   const avg = pastOrCurrent.length > 0
     ? Math.round(pastOrCurrent.reduce((sum, s) => sum + s.percentage, 0) / pastOrCurrent.length)
     : 0;
   const monthsAboveTarget = pastOrCurrent.filter(s => s.targetMet).length;
   const bestMonth = pastOrCurrent.reduce((best, s) => (!best || s.percentage > best.percentage) ? s : best, null);
+  const worstMonth = pastOrCurrent.reduce((worst, s) => (!worst || s.percentage < worst.percentage) ? s : worst, null);
   const avgColor = avg >= targetPct ? '#10b981' : avg >= targetPct * 0.7 ? '#f59e0b' : '#ef4444';
+  const { totalOfficeDays, totalRemoteDays, totalVacationDays, totalFlexDays, totalSickDays } = totals;
+  const homeOfficeQuote = (totalOfficeDays + totalRemoteDays) > 0
+    ? Math.round(totalRemoteDays / (totalOfficeDays + totalRemoteDays) * 100)
+    : 0;
+  const maxWeekday = Math.max(...[1,2,3,4,5].map(d => weekdayOffice[d]), 1);
 
   document.getElementById('year-content').innerHTML = `
-    <div class="grid grid-3 mb-24">
-      <div class="stat-card">
-        <div class="stat-icon">📊</div>
-        <div class="stat-value" style="color:${avgColor}">${avg}%</div>
-        <div class="stat-label">Ø Team-Anwesenheit ${pastOrCurrent.length > 0 ? `(${pastOrCurrent.length} Monate)` : ''}</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-icon">✅</div>
-        <div class="stat-value text-success">${monthsAboveTarget}</div>
-        <div class="stat-label">Monate ≥ ${targetPct}%-Ziel</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-icon">🏆</div>
-        <div class="stat-value text-accent">${bestMonth ? `${bestMonth.percentage}%` : '–'}</div>
-        <div class="stat-label">${bestMonth ? `Bester Monat: ${MONTH_NAMES[bestMonth.month]}` : 'Noch keine Daten'}</div>
+    <div class="card mb-24">
+      <div class="kpi-bar">
+        <div class="kpi-item">
+          <div class="kpi-item-value" style="color:${avgColor}">${avg}%</div>
+          <div class="kpi-item-label">Ø Team-Anwesenheit${pastOrCurrent.length > 0 ? ` · ${pastOrCurrent.length} Mo.` : ''}</div>
+        </div>
+        <div class="kpi-item">
+          <div class="kpi-item-value text-success">${monthsAboveTarget}</div>
+          <div class="kpi-item-label">Monate ≥ ${targetPct}%-Ziel</div>
+        </div>
+        <div class="kpi-item" title="${bestMonth ? MONTH_NAMES[bestMonth.month] : ''}">
+          <div class="kpi-item-value text-accent">${bestMonth ? `${bestMonth.percentage}%` : '–'}</div>
+          <div class="kpi-item-label">Bester: ${bestMonth ? MONTH_SHORT[bestMonth.month] : '–'}</div>
+        </div>
+        <div class="kpi-item" title="${worstMonth ? MONTH_NAMES[worstMonth.month] : ''}">
+          <div class="kpi-item-value text-danger">${worstMonth ? `${worstMonth.percentage}%` : '–'}</div>
+          <div class="kpi-item-label">Schwächster: ${worstMonth ? MONTH_SHORT[worstMonth.month] : '–'}</div>
+        </div>
+        <div class="kpi-item">
+          <div class="kpi-item-value">${homeOfficeQuote}%</div>
+          <div class="kpi-item-label">Home-Office-Quote</div>
+        </div>
+        <div class="kpi-item" title="${totalVacationDays} Urlaub · ${totalSickDays} Krank · ${totalFlexDays} Gleittag">
+          <div class="kpi-item-value">${totalVacationDays + totalSickDays + totalFlexDays}</div>
+          <div class="kpi-item-label">Abwesenheiten</div>
+        </div>
       </div>
     </div>
 
-    <div class="card">
-      <h3 style="font-size:16px;font-weight:700;margin-bottom:20px">Team-Anwesenheitsquote pro Monat</h3>
-      <div style="position:relative;height:320px">
-        <canvas id="year-chart"></canvas>
+    <div class="layout-stats-sidebar">
+      <div class="card">
+        <h3 style="font-size:16px;font-weight:700;margin-bottom:20px">Team-Anwesenheitsquote pro Monat</h3>
+        <div style="position:relative;height:300px">
+          <canvas id="year-chart"></canvas>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3 style="font-size:16px;font-weight:700;margin-bottom:20px">Bürotage nach Wochentag</h3>
+        ${[1,2,3,4,5].map(d => `
+          <div style="margin-bottom:12px">
+            <div class="flex-between text-sm mb-8">
+              <span>${WEEKDAY_NAMES[d]}</span>
+              <span class="fw-bold">${weekdayOffice[d]}</span>
+            </div>
+            <div class="team-bar-bg">
+              <div class="team-bar-fill" style="width:${Math.round(weekdayOffice[d] / maxWeekday * 100)}%;background:#6366f1"></div>
+            </div>
+          </div>`).join('')}
+        <div class="alert alert-info mt-16" style="margin-bottom:0;font-size:11px">
+          🔒 Anonym &amp; aggregiert
+        </div>
       </div>
     </div>
   `;
 
-  drawChart(monthStats, targetPct);
+  // Führende Monate ohne Daten (z.B. vor Nutzungsbeginn) im Chart nicht als leere Balken zeigen
+  const firstDataIdx = monthStats.findIndex(s => s.hasData);
+  const chartStats = firstDataIdx > 0 ? monthStats.slice(firstDataIdx) : monthStats;
+  drawChart(chartStats, targetPct);
 }
 
 function drawChart(monthStats, targetPct) {
@@ -142,7 +197,7 @@ function drawChart(monthStats, targetPct) {
 
   chartInstance = new Chart(ctx, {
     data: {
-      labels: MONTH_SHORT,
+      labels: monthStats.map(s => MONTH_SHORT[s.month]),
       datasets: [
         {
           type: 'bar',

@@ -129,7 +129,7 @@ $$;
 
 -- Das Team wird stets aus auth.uid() ermittelt. Übergebene Feiertage werden
 -- aus vorhandenen (z. B. alten oder direkt geschriebenen) Rohdaten entfernt.
-DROP FUNCTION IF EXISTS public.get_team_stats(INT, INT);
+DROP FUNCTION IF EXISTS public.get_team_stats(INT, INT, DATE[]);
 CREATE FUNCTION public.get_team_stats(p_year INT, p_month INT, p_holidays DATE[] DEFAULT '{}')
 RETURNS TABLE(type TEXT, total_days BIGINT, member_count BIGINT)
 LANGUAGE sql SECURITY DEFINER SET search_path = public, pg_temp AS $$
@@ -145,7 +145,7 @@ LANGUAGE sql SECURITY DEFINER SET search_path = public, pg_temp AS $$
 $$;
 
 DROP FUNCTION IF EXISTS public.get_team_member_percentages(INT, INT, TEXT[]);
-DROP FUNCTION IF EXISTS public.get_team_member_stats(INT, INT, DATE);
+DROP FUNCTION IF EXISTS public.get_team_member_stats(INT, INT, DATE, DATE[]);
 CREATE FUNCTION public.get_team_member_stats(
   p_year INT, p_month INT, p_today DATE DEFAULT NULL, p_holidays DATE[] DEFAULT '{}'
 )
@@ -200,7 +200,8 @@ $$;
 -- Pflichttage über alle Mitglieder hinweg (gewichteter Durchschnitt, keine Einzeldaten).
 DROP FUNCTION IF EXISTS public.get_team_year_stats(INT, DATE[]);
 CREATE FUNCTION public.get_team_year_stats(p_year INT, p_holidays DATE[] DEFAULT '{}')
-RETURNS TABLE(month INT, office_days BIGINT, absence_days BIGINT, required_days BIGINT)
+RETURNS TABLE(month INT, office_days BIGINT, absence_days BIGINT, required_days BIGINT,
+  remote_days BIGINT, vacation_days BIGINT, flex_days BIGINT, sick_days BIGINT)
 LANGUAGE sql SECURITY DEFINER SET search_path = public, pg_temp AS $$
   WITH days AS (
     SELECT generate_series(make_date(p_year, 1, 1), make_date(p_year, 12, 31), INTERVAL '1 day')::date AS day
@@ -217,10 +218,40 @@ LANGUAGE sql SECURITY DEFINER SET search_path = public, pg_temp AS $$
   SELECT extract(month FROM md.day)::INT,
     count(*) FILTER (WHERE md.is_required AND a.type = 'OFFICE'),
     count(*) FILTER (WHERE md.is_required AND a.type IN ('VACATION','FLEX','SICK')),
-    count(*) FILTER (WHERE md.is_required)
+    count(*) FILTER (WHERE md.is_required),
+    count(*) FILTER (WHERE md.is_required AND a.type = 'REMOTE'),
+    count(*) FILTER (WHERE md.is_required AND a.type = 'VACATION'),
+    count(*) FILTER (WHERE md.is_required AND a.type = 'FLEX'),
+    count(*) FILTER (WHERE md.is_required AND a.type = 'SICK')
   FROM member_days md
   LEFT JOIN attendance a ON a.member_id = md.member_id AND a.date = md.day
   GROUP BY extract(month FROM md.day)
+  ORDER BY 1;
+$$;
+
+-- Anonyme Wochentag-Verteilung fürs Team übers ganze Jahr: rein aggregiert
+-- (keine Mitglieds-IDs), analog zu get_team_year_stats aber nach Wochentag gruppiert.
+DROP FUNCTION IF EXISTS public.get_team_weekday_stats(INT, DATE[]);
+CREATE FUNCTION public.get_team_weekday_stats(p_year INT, p_holidays DATE[] DEFAULT '{}')
+RETURNS TABLE(weekday INT, office_days BIGINT)
+LANGUAGE sql SECURITY DEFINER SET search_path = public, pg_temp AS $$
+  WITH days AS (
+    SELECT generate_series(make_date(p_year, 1, 1), make_date(p_year, 12, 31), INTERVAL '1 day')::date AS day
+  ),
+  member_days AS (
+    SELECT p.id AS member_id, d.day,
+      (extract(isodow FROM d.day)::INT = ANY(p.work_days)
+        AND NOT (d.day = ANY(coalesce(p_holidays, '{}'::date[])))) AS is_required
+    FROM profiles caller
+    JOIN profiles p ON p.team_id = caller.team_id AND NOT p.exclude_from_team
+    CROSS JOIN days d
+    WHERE caller.id = auth.uid() AND caller.team_id IS NOT NULL
+  )
+  SELECT extract(isodow FROM md.day)::INT,
+    count(*) FILTER (WHERE md.is_required AND a.type = 'OFFICE')
+  FROM member_days md
+  LEFT JOIN attendance a ON a.member_id = md.member_id AND a.date = md.day
+  GROUP BY extract(isodow FROM md.day)
   ORDER BY 1;
 $$;
 
@@ -244,6 +275,7 @@ REVOKE ALL ON FUNCTION public.get_team_stats(INT, INT, DATE[]) FROM PUBLIC, anon
 REVOKE ALL ON FUNCTION public.get_team_member_stats(INT, INT, DATE, DATE[]) FROM PUBLIC, anon;
 REVOKE ALL ON FUNCTION public.get_team_day_counts(INT, INT, DATE[]) FROM PUBLIC, anon;
 REVOKE ALL ON FUNCTION public.get_team_year_stats(INT, DATE[]) FROM PUBLIC, anon;
+REVOKE ALL ON FUNCTION public.get_team_weekday_stats(INT, DATE[]) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.create_team(TEXT, NUMERIC) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.join_team_by_code(TEXT) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.get_team_members() TO authenticated;
@@ -251,6 +283,7 @@ GRANT EXECUTE ON FUNCTION public.get_team_stats(INT, INT, DATE[]) TO authenticat
 GRANT EXECUTE ON FUNCTION public.get_team_member_stats(INT, INT, DATE, DATE[]) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.get_team_day_counts(INT, INT, DATE[]) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.get_team_year_stats(INT, DATE[]) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.get_team_weekday_stats(INT, DATE[]) TO authenticated;
 
 DELETE FROM public.attendance WHERE type = 'HOLIDAY';
 
