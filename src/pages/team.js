@@ -21,10 +21,13 @@ export async function renderTeam(prof) {
             <h1 class="page-title">👥 Team-Übersicht</h1>
             <p class="page-subtitle">Anonyme Team-Statistiken – keine individuellen Daten sichtbar</p>
           </div>
-          <div class="month-selector">
-            <button class="month-btn" id="btn-prev">‹</button>
-            <span class="month-display" id="month-display"></span>
-            <button class="month-btn" id="btn-next">›</button>
+          <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+            <button class="btn btn-ghost btn-sm" onclick="navigate('team-calendar')">🗓️ Team-Kalender</button>
+            <div class="month-selector">
+              <button class="month-btn" id="btn-prev">‹</button>
+              <span class="month-display" id="month-display"></span>
+              <button class="month-btn" id="btn-next">›</button>
+            </div>
           </div>
         </div>
         <div id="team-content"><div class="loader-wrap"><div class="loader"></div></div></div>

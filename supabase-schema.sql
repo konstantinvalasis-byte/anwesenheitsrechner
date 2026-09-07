@@ -168,6 +168,62 @@ LANGUAGE sql SECURITY DEFINER SET search_path = public, pg_temp AS $$
   ORDER BY count(*) FILTER (WHERE a.type = 'OFFICE') DESC;
 $$;
 
+-- Anonyme Tagesübersicht für den Team-Kalender: pro Kalendertag im Monat nur
+-- die Gesamtzahl (keine Mitglieds-IDs/Namen) — konsistent mit get_team_stats.
+DROP FUNCTION IF EXISTS public.get_team_day_counts(INT, INT, DATE[]);
+CREATE FUNCTION public.get_team_day_counts(p_year INT, p_month INT, p_holidays DATE[] DEFAULT '{}')
+RETURNS TABLE(day DATE, office_count BIGINT, team_size BIGINT)
+LANGUAGE sql SECURITY DEFINER SET search_path = public, pg_temp AS $$
+  WITH days AS (
+    SELECT generate_series(
+      make_date(p_year, p_month, 1),
+      (make_date(p_year, p_month, 1) + INTERVAL '1 month - 1 day')::date,
+      INTERVAL '1 day'
+    )::date AS day
+  )
+  SELECT d.day,
+    count(*) FILTER (WHERE a.type = 'OFFICE'),
+    count(*) FILTER (
+      WHERE extract(isodow FROM d.day)::INT = ANY(p.work_days)
+        AND NOT (d.day = ANY(coalesce(p_holidays, '{}'::date[])))
+    )
+  FROM profiles caller
+  JOIN profiles p ON p.team_id = caller.team_id AND NOT p.exclude_from_team
+  CROSS JOIN days d
+  LEFT JOIN attendance a ON a.member_id = p.id AND a.date = d.day
+  WHERE caller.id = auth.uid() AND caller.team_id IS NOT NULL
+  GROUP BY d.day
+  ORDER BY d.day;
+$$;
+
+-- Anonyme Jahresübersicht fürs Team: pro Monat aggregierte Büro-/Abwesenheits-/
+-- Pflichttage über alle Mitglieder hinweg (gewichteter Durchschnitt, keine Einzeldaten).
+DROP FUNCTION IF EXISTS public.get_team_year_stats(INT, DATE[]);
+CREATE FUNCTION public.get_team_year_stats(p_year INT, p_holidays DATE[] DEFAULT '{}')
+RETURNS TABLE(month INT, office_days BIGINT, absence_days BIGINT, required_days BIGINT)
+LANGUAGE sql SECURITY DEFINER SET search_path = public, pg_temp AS $$
+  WITH days AS (
+    SELECT generate_series(make_date(p_year, 1, 1), make_date(p_year, 12, 31), INTERVAL '1 day')::date AS day
+  ),
+  member_days AS (
+    SELECT p.id AS member_id, d.day,
+      (extract(isodow FROM d.day)::INT = ANY(p.work_days)
+        AND NOT (d.day = ANY(coalesce(p_holidays, '{}'::date[])))) AS is_required
+    FROM profiles caller
+    JOIN profiles p ON p.team_id = caller.team_id AND NOT p.exclude_from_team
+    CROSS JOIN days d
+    WHERE caller.id = auth.uid() AND caller.team_id IS NOT NULL
+  )
+  SELECT extract(month FROM md.day)::INT,
+    count(*) FILTER (WHERE md.is_required AND a.type = 'OFFICE'),
+    count(*) FILTER (WHERE md.is_required AND a.type IN ('VACATION','FLEX','SICK')),
+    count(*) FILTER (WHERE md.is_required)
+  FROM member_days md
+  LEFT JOIN attendance a ON a.member_id = md.member_id AND a.date = md.day
+  GROUP BY extract(month FROM md.day)
+  ORDER BY 1;
+$$;
+
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, pg_temp AS $$
 BEGIN
@@ -186,11 +242,15 @@ REVOKE ALL ON FUNCTION public.join_team_by_code(TEXT) FROM PUBLIC, anon;
 REVOKE ALL ON FUNCTION public.get_team_members() FROM PUBLIC, anon;
 REVOKE ALL ON FUNCTION public.get_team_stats(INT, INT, DATE[]) FROM PUBLIC, anon;
 REVOKE ALL ON FUNCTION public.get_team_member_stats(INT, INT, DATE, DATE[]) FROM PUBLIC, anon;
+REVOKE ALL ON FUNCTION public.get_team_day_counts(INT, INT, DATE[]) FROM PUBLIC, anon;
+REVOKE ALL ON FUNCTION public.get_team_year_stats(INT, DATE[]) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.create_team(TEXT, NUMERIC) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.join_team_by_code(TEXT) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.get_team_members() TO authenticated;
 GRANT EXECUTE ON FUNCTION public.get_team_stats(INT, INT, DATE[]) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.get_team_member_stats(INT, INT, DATE, DATE[]) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.get_team_day_counts(INT, INT, DATE[]) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.get_team_year_stats(INT, DATE[]) TO authenticated;
 
 DELETE FROM public.attendance WHERE type = 'HOLIDAY';
 

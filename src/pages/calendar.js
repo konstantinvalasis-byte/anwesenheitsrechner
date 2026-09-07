@@ -27,6 +27,7 @@ export async function renderCalendar(prof) {
             <p class="page-subtitle">Klicke auf einen Tag um den Typ einzutragen</p>
           </div>
           <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+            <button class="btn btn-ghost btn-sm" id="btn-series">📆 Serie eintragen</button>
             <button class="btn btn-danger btn-sm" id="btn-clear-all" style="display:none">🗑 Monat löschen</button>
             <div class="month-selector">
               <button class="month-btn" id="btn-prev">‹</button>
@@ -76,6 +77,7 @@ export async function renderCalendar(prof) {
   document.getElementById('btn-prev').onclick = () => { currentMonth--; if(currentMonth<0){currentMonth=11;currentYear--;} setMonthState(currentYear, currentMonth); loadCalendar(); };
   document.getElementById('btn-next').onclick = () => { currentMonth++; if(currentMonth>11){currentMonth=0;currentYear++;} setMonthState(currentYear, currentMonth); loadCalendar(); };
   document.getElementById('btn-clear-all').onclick = () => openClearAllModal();
+  document.getElementById('btn-series').onclick = () => openSeriesModal();
   await loadCalendar();
 }
 
@@ -290,6 +292,76 @@ window.clearAllEntries = async function() {
   if (error) { showToast('❌ Fehler beim Löschen', 'error'); return; }
   entries = [];
   showToast(`🗑 ${count} Einträge gelöscht`, 'info');
+  closeDayModal();
+  renderGrid();
+};
+
+function openSeriesModal() {
+  const monthStart = `${currentYear}-${String(currentMonth+1).padStart(2,'0')}-01`;
+  const monthEnd   = `${currentYear}-${String(currentMonth+1).padStart(2,'0')}-${new Date(currentYear,currentMonth+1,0).getDate()}`;
+  const selectableTypes = Object.entries(DAY_TYPES).filter(([k]) => k !== 'HOLIDAY');
+
+  document.getElementById('day-modal').innerHTML = `
+    <div class="modal-overlay" onclick="if(event.target===this)closeDayModal()">
+      <div class="modal slide-up">
+        <div class="modal-title">📆 Serie eintragen</div>
+        <div class="modal-date">Zeitraum wählen, dann Typ zuweisen — Wochenenden und Feiertage werden automatisch übersprungen</div>
+        <div class="form-group">
+          <label class="form-label">Von</label>
+          <input type="date" class="form-input" id="series-from" min="${monthStart}" max="${monthEnd}" value="${monthStart}">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Bis</label>
+          <input type="date" class="form-input" id="series-to" min="${monthStart}" max="${monthEnd}" value="${monthEnd}">
+        </div>
+        <div id="series-error" class="form-error mb-8"></div>
+        <div class="type-grid">
+          ${selectableTypes.map(([k,v]) => `
+            <button class="type-btn" onclick="applySeries('${k}')">
+              <span class="type-emoji">${v.emoji}</span>${v.label}
+            </button>`).join('')}
+        </div>
+        <button class="btn btn-ghost" onclick="closeDayModal()" style="width:100%">Abbrechen</button>
+      </div>
+    </div>`;
+}
+
+window.applySeries = async function(type) {
+  const errEl = document.getElementById('series-error');
+  const fromDate = document.getElementById('series-from').value;
+  const toDate = document.getElementById('series-to').value;
+  errEl.textContent = '';
+
+  if (!fromDate || !toDate) { errEl.textContent = 'Bitte Von- und Bis-Datum wählen.'; return; }
+  if (fromDate > toDate) { errEl.textContent = 'Das Startdatum muss vor dem Enddatum liegen.'; return; }
+
+  const workDays = profile.work_days || [1,2,3,4,5];
+  const rows = [];
+  const cursor = new Date(fromDate + 'T12:00:00');
+  const end = new Date(toDate + 'T12:00:00');
+  while (cursor <= end) {
+    const ds = dateKey(cursor);
+    if (workDays.includes(cursor.getDay()) && !holidayMap.has(ds)) {
+      rows.push({ member_id: profile.id, date: ds, type });
+    }
+    cursor.setDate(cursor.getDate() + 1);
+  }
+
+  if (rows.length === 0) { errEl.textContent = 'Keine Arbeitstage im gewählten Zeitraum.'; return; }
+
+  document.querySelectorAll('.type-btn').forEach(b => b.disabled = true);
+  const { error } = await supabase.from('attendance').upsert(rows, { onConflict: 'member_id,date' });
+  if (error) {
+    document.querySelectorAll('.type-btn').forEach(b => b.disabled = false);
+    errEl.textContent = 'Fehler beim Speichern. Bitte erneut versuchen.';
+    return;
+  }
+
+  rows.forEach(r => {
+    const idx = entries.findIndex(e => e.date === r.date);
+    if (idx >= 0) entries[idx].type = r.type; else entries.push({ date: r.date, type: r.type });
+  });
+  showToast(`✅ ${rows.length} Tage als ${DAY_TYPES[type].emoji} ${DAY_TYPES[type].label} eingetragen`, 'success');
   closeDayModal();
   renderGrid();
 };

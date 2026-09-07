@@ -17,6 +17,7 @@ export function renderNavbar(profile, activePage) {
       <button class="nav-link ${activePage==='dashboard'?'active':''}" onclick="navigate('dashboard')">🏠 Dashboard</button>
       <button class="nav-link ${activePage==='calendar'?'active':''}" onclick="navigate('calendar')">📅 Kalender</button>
       <button class="nav-link ${activePage==='team'?'active':''}" onclick="navigate('team')">👥 Team</button>
+      <button class="nav-link ${activePage==='year'?'active':''}" onclick="navigate('year')">📈 Jahr</button>
     </nav>
     <div class="navbar-actions">
       <div class="user-badge" onclick="navigate('settings')" style="cursor:pointer" title="Einstellungen">
@@ -66,6 +67,9 @@ export function renderNavbar(profile, activePage) {
     </button>
     <button class="bottom-nav-btn ${activePage==='team'?'active':''}" onclick="navigate('team')">
       <span class="nav-icon">👥</span><span class="nav-label">Team</span>
+    </button>
+    <button class="bottom-nav-btn ${activePage==='year'?'active':''}" onclick="navigate('year')">
+      <span class="nav-icon">📈</span><span class="nav-label">Jahr</span>
     </button>
     <button class="bottom-nav-btn ${activePage==='settings'?'active':''}" onclick="navigate('settings')">
       <span class="nav-icon">⚙️</span><span class="nav-label">Einstellungen</span>

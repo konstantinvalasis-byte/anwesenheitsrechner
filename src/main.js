@@ -4,6 +4,9 @@ import { renderLogin } from './pages/login.js';
 import { renderDashboard } from './pages/dashboard.js';
 import { renderCalendar } from './pages/calendar.js';
 import { renderTeam } from './pages/team.js';
+import { renderTeamCalendar } from './pages/team-calendar.js';
+import { renderYearOverview } from './pages/year-overview.js';
+import { renderTeamYearOverview } from './pages/team-year-overview.js';
 import { renderSettings } from './pages/settings.js';
 import { renderTeamSetup } from './pages/team-setup.js';
 import { renderTeamManage } from './pages/team-manage.js';
@@ -128,6 +131,9 @@ async function router() {
       dashboard:     () => renderDashboard(currentProfile),
       calendar:      () => renderCalendar(currentProfile),
       team:          () => renderTeam(currentProfile),
+      'team-calendar': () => renderTeamCalendar(currentProfile),
+      year:          () => renderYearOverview(currentProfile),
+      'team-year':   () => renderTeamYearOverview(currentProfile),
       settings:      () => renderSettings(currentProfile),
       'team-setup':  () => renderTeamSetup(currentProfile),
       'team-manage': () => renderTeamManage(currentProfile),
