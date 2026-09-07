@@ -13,6 +13,7 @@ let entries = [];
 let profile = null;
 let holidayMap = new Map();
 let schulferienList = [];
+let teamDayMap = {};
 
 export async function renderCalendar(prof) {
   profile = prof;
@@ -56,6 +57,10 @@ export async function renderCalendar(prof) {
                   <span>🎉 Feiertag <em style="font-size:11px;font-style:normal;color:var(--text-muted)">(automatisch)</em></span>
                   <span class="text-xs text-muted">(–Pflicht)</span>
                 </div>
+                <div class="legend-item">
+                  <div class="legend-dot" style="background:#818cf8;height:4px;width:14px;border-radius:2px"></div>
+                  <span>Fortschrittsbalken unten = Kolleg:innen im Büro an diesem Tag</span>
+                </div>
               </div>
             </div>
             <div class="card">
@@ -89,9 +94,14 @@ async function loadCalendar() {
 
   const start = `${currentYear}-${String(currentMonth+1).padStart(2,'0')}-01`;
   const end   = `${currentYear}-${String(currentMonth+1).padStart(2,'0')}-${new Date(currentYear,currentMonth+1,0).getDate()}`;
+  const monthPrefix = `${currentYear}-${String(currentMonth+1).padStart(2,'0')}-`;
+  const monthHolidays = [...holidayMap.keys()].filter(d => d.startsWith(monthPrefix));
 
-  const { data, error } = await supabase.from('attendance').select('*')
-    .eq('member_id', profile.id).gte('date', start).lte('date', end);
+  const [{ data, error }, teamRes] = await Promise.all([
+    supabase.from('attendance').select('*')
+      .eq('member_id', profile.id).gte('date', start).lte('date', end),
+    supabase.rpc('get_team_day_counts', { p_year: currentYear, p_month: currentMonth + 1, p_holidays: monthHolidays }),
+  ]);
   if (error) {
     console.error('[Calendar] Einträge konnten nicht geladen werden:', error);
     entries = [];
@@ -101,6 +111,13 @@ async function loadCalendar() {
     return;
   }
   entries = data || [];
+
+  teamDayMap = {};
+  if (teamRes.error) {
+    console.warn('[Calendar] Team-Präsenz konnte nicht geladen werden:', teamRes.error);
+  } else {
+    (teamRes.data || []).forEach(row => { teamDayMap[row.day] = row; });
+  }
 
   renderGrid();
   renderHolidays();
@@ -140,13 +157,24 @@ function renderGrid() {
     if (type) classes += ` has-entry type-${type}`;
 
     const emoji = type && DAY_TYPES[type] ? DAY_TYPES[type].emoji : (isHol && !isOffDay ? '🎉' : '');
-    const titleAttr = isOffDay ? 'Kein Arbeitstag' : (isHol ? holidayMap.get(ds) : (ferienName ? `Schulferien: ${ferienName}` : ''));
+    const baseTitle = isOffDay ? 'Kein Arbeitstag' : (isHol ? holidayMap.get(ds) : (ferienName ? `Schulferien: ${ferienName}` : ''));
     const clickable = !isWknd && !isOffDay && !isHol;
+
+    const teamRow = teamDayMap[ds];
+    const teamSize = teamRow ? Number(teamRow.team_size) : 0;
+    const officeCount = teamRow ? Number(teamRow.office_count) : 0;
+    const ratio = teamSize > 0 ? officeCount / teamSize : 0;
+    const teamBar = teamSize > 0
+      ? `<span class="cal-team-bar"><span class="cal-team-bar-fill" style="width:${Math.round(ratio*100)}%;background:rgba(99,102,241,${(0.4 + ratio*0.6).toFixed(2)})"></span></span>`
+      : '';
+    const teamInfo = teamSize > 0 ? `${officeCount} von ${teamSize} Kolleg:innen im Büro` : '';
+    const titleAttr = [baseTitle, teamInfo].filter(Boolean).join(' • ');
 
     html += `<div class="${classes}" ${clickable ? `onclick="openDayModal('${ds}')"` : ''} title="${titleAttr}">
       <span class="cal-day-num">${d}</span>
       ${emoji ? `<span class="cal-day-emoji">${emoji}</span>` : ''}
       ${ferienName && (!isHol || isWknd || isOffDay) && !type ? `<span class="cal-ferien-dot" title="${ferienName}"></span>` : ''}
+      ${teamBar}
     </div>`;
   }
 
