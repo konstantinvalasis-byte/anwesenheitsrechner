@@ -4,7 +4,7 @@ const CHANGELOG = [
   {
     date: 'September 2026',
     items: [
-      'Kalender: Mehrere Tage per Klick/Ziehen auswählen, Wochentag-Filter für Serien (z.B. alle Mittwoche)',
+      'Serie eintragen: Wochentag-Filter (z.B. nur Mittwoche) mit Vorschau der betroffenen Tage',
       'Registrierung ohne Team möglich, Teambeitritt kann später erfolgen',
       'Jahresübersicht, Team-Kalender und Serieneintrag hinzugefügt',
       'Statistik-Bugs behoben und Sicherheitslücke (XSS) geschlossen',
