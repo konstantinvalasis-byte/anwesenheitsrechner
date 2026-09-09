@@ -389,6 +389,72 @@ body {
 .modal-title { font-size: 18px; font-weight: 700; margin-bottom: 8px; }
 .modal-date { font-size: 13px; color: var(--text-secondary); margin-bottom: 20px; }
 .type-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
+
+/* Wochentag-Chips (Serien-Modal + Auswahl-Leiste) */
+.wd-chips { display: flex; gap: 6px; flex-wrap: wrap; }
+.wd-chip {
+  flex: 1; min-width: 40px; padding: 8px 0; border-radius: var(--radius-sm);
+  border: 1px solid var(--border); background: var(--bg-card);
+  color: var(--text-secondary); font-family: inherit; font-size: 13px;
+  font-weight: 600; cursor: pointer; transition: var(--transition);
+}
+.wd-chip:hover { border-color: var(--accent); }
+.wd-chip.active { border-color: var(--accent); background: rgba(99,102,241,0.15); color: var(--text-primary); }
+.wd-chip:disabled { opacity: 0.35; cursor: default; }
+
+/* Grid-Auswahlmodus */
+.btn.active { border-color: var(--accent); color: var(--text-primary); }
+.calendar-grid.select-mode { user-select: none; }
+.calendar-grid.select-mode .cal-day[data-date] { cursor: pointer; }
+.cal-day.cal-selected { outline: 2px solid var(--accent); outline-offset: -2px; background: rgba(99,102,241,0.18); }
+
+/* Auswahl-Menü — schwebendes Popover, gehört sichtbar NICHT zum Kalender */
+#select-bar:not(:empty) {
+  position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%);
+  z-index: 120; width: min(300px, calc(100vw - 32px));
+  display: flex; flex-direction: column;
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: 14px; padding: 6px;
+  box-shadow: 0 12px 40px rgba(0,0,0,0.35);
+  animation: slideUp 0.16s ease;
+}
+.menu-head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 6px 8px 8px;
+}
+.menu-count { font-size: 12px; font-weight: 700; color: var(--text-primary); }
+.menu-x {
+  border: none; background: transparent; color: var(--text-muted);
+  font-size: 13px; cursor: pointer; padding: 2px 4px; line-height: 1;
+}
+.menu-x:hover { color: var(--text-primary); }
+.menu-section { padding: 6px 8px; border-top: 1px solid var(--border); }
+.menu-label {
+  display: block; font-size: 10px; font-weight: 700; letter-spacing: 0.06em;
+  text-transform: uppercase; color: var(--text-muted); margin-bottom: 6px;
+}
+.menu-links { display: flex; gap: 12px; margin-top: 6px; }
+.menu-links button {
+  border: none; background: transparent; color: var(--accent);
+  font-size: 11px; font-weight: 600; cursor: pointer; padding: 0;
+}
+.menu-links button:disabled { color: var(--text-muted); cursor: default; }
+.menu-items { display: flex; flex-direction: column; }
+.menu-item {
+  display: flex; align-items: center; gap: 8px; width: 100%;
+  padding: 7px 8px; border: none; border-radius: 8px;
+  background: transparent; color: var(--text-primary);
+  font-family: inherit; font-size: 13px; font-weight: 500;
+  cursor: pointer; text-align: left; transition: var(--transition);
+}
+.menu-item span { font-size: 15px; }
+.menu-item:hover:not(:disabled) { background: var(--bg-card-hover); }
+.menu-item:disabled { opacity: 0.4; cursor: default; }
+.menu-item-danger { color: var(--danger, #ef4444); }
+
+/* kompaktere Wochentag-Chips im Menü */
+#select-bar .wd-chips { gap: 4px; }
+#select-bar .wd-chip { min-width: 28px; padding: 5px 0; font-size: 11px; border-radius: 7px; }
 .type-btn {
   padding: 14px 16px; border-radius: var(--radius-sm);
   border: 1px solid var(--border); background: var(--bg-card);

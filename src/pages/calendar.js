@@ -14,6 +14,9 @@ let profile = null;
 let holidayMap = new Map();
 let schulferienList = [];
 let teamDayMap = {};
+let selectMode = false;
+const selected = new Set();   // 'YYYY-MM-DD'
+let dragging = false, dragPaint = true;
 
 export async function renderCalendar(prof) {
   profile = prof;
@@ -29,6 +32,7 @@ export async function renderCalendar(prof) {
           </div>
           <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
             <button class="btn btn-ghost btn-sm" id="btn-series">📆 Serie eintragen</button>
+            <button class="btn btn-ghost btn-sm" id="btn-select">✏️ Auswahlmodus</button>
             <button class="btn btn-danger btn-sm" id="btn-clear-all" style="display:none">🗑 Monat löschen</button>
             <div class="month-selector">
               <button class="month-btn" id="btn-prev">‹</button>
@@ -75,14 +79,35 @@ export async function renderCalendar(prof) {
         </div>
       </div>
     </div>
+    <div id="select-bar"></div>
     <div id="day-modal"></div>
   `;
 
   renderNavbar(profile, 'calendar');
-  document.getElementById('btn-prev').onclick = () => { currentMonth--; if(currentMonth<0){currentMonth=11;currentYear--;} setMonthState(currentYear, currentMonth); loadCalendar(); };
-  document.getElementById('btn-next').onclick = () => { currentMonth++; if(currentMonth>11){currentMonth=0;currentYear++;} setMonthState(currentYear, currentMonth); loadCalendar(); };
+  document.getElementById('btn-prev').onclick = () => { currentMonth--; if(currentMonth<0){currentMonth=11;currentYear--;} selected.clear(); setMonthState(currentYear, currentMonth); loadCalendar(); };
+  document.getElementById('btn-next').onclick = () => { currentMonth++; if(currentMonth>11){currentMonth=0;currentYear++;} selected.clear(); setMonthState(currentYear, currentMonth); loadCalendar(); };
   document.getElementById('btn-clear-all').onclick = () => openClearAllModal();
   document.getElementById('btn-series').onclick = () => openSeriesModal();
+  document.getElementById('btn-select').onclick = () => toggleSelectMode();
+
+  // Desktop-Drag: Listener einmalig am Grid-Container (bleibt über Re-Renders bestehen)
+  const grid = document.getElementById('calendar-grid');
+  grid.addEventListener('pointerdown', e => {
+    if (!selectMode || e.pointerType === 'touch') return;
+    const el = e.target.closest('.cal-day[data-date]');
+    if (!el) return;
+    dragging = true;
+    dragPaint = !selected.has(el.dataset.date);
+    paintDay(el, dragPaint);
+    e.preventDefault();
+  });
+  grid.addEventListener('pointermove', e => {
+    if (!dragging) return;
+    const el = document.elementFromPoint(e.clientX, e.clientY)?.closest('.cal-day[data-date]');
+    if (el) paintDay(el, dragPaint);
+  });
+  window.addEventListener('pointerup', () => { dragging = false; });
+
   await loadCalendar();
 }
 
@@ -132,7 +157,7 @@ function renderGrid() {
   const entryMap = {};
   entries.forEach(e => entryMap[e.date] = e.type);
 
-  let html = `<div class="calendar-grid">`;
+  let html = `<div class="calendar-grid${selectMode ? ' select-mode' : ''}">`;
   DAY_NAMES.forEach(d => { html += `<div class="cal-header">${d}</div>`; });
 
   for (let i = 0; i < firstDayOfWeek; i++) html += `<div class="cal-day cal-empty"></div>`;
@@ -155,6 +180,7 @@ function renderGrid() {
     if (ferienName && (!isHol || isWknd || isOffDay)) classes += ' cal-schulferien';
     if (isToday) classes += ' cal-today';
     if (type) classes += ` has-entry type-${type}`;
+    if (selected.has(ds)) classes += ' cal-selected';
 
     const emoji = type && DAY_TYPES[type] ? DAY_TYPES[type].emoji : (isHol && !isOffDay ? '🎉' : '');
     const baseTitle = isOffDay ? 'Kein Arbeitstag' : (isHol ? holidayMap.get(ds) : (ferienName ? `Schulferien: ${ferienName}` : ''));
@@ -170,7 +196,7 @@ function renderGrid() {
     const teamInfo = teamSize > 0 ? `${officeCount} von ${teamSize} Kolleg:innen im Büro` : '';
     const titleAttr = [baseTitle, teamInfo].filter(Boolean).join(' • ');
 
-    html += `<div class="${classes}" ${clickable ? `onclick="openDayModal('${ds}')"` : ''} title="${titleAttr}">
+    html += `<div class="${classes}" ${clickable ? `data-date="${ds}" onclick="onDayClick('${ds}')"` : ''} title="${titleAttr}">
       <span class="cal-day-num">${d}</span>
       ${emoji ? `<span class="cal-day-emoji">${emoji}</span>` : ''}
       ${ferienName && (!isHol || isWknd || isOffDay) && !type ? `<span class="cal-ferien-dot" title="${ferienName}"></span>` : ''}
@@ -184,7 +210,123 @@ function renderGrid() {
   document.getElementById('calendar-grid').innerHTML = html;
   const btn = document.getElementById('btn-clear-all');
   if (btn) btn.style.display = entries.length > 0 ? 'inline-flex' : 'none';
+  renderSelectBar();
 }
+
+// ---- Grid-Auswahlmodus ----------------------------------------------------
+
+window.onDayClick = ds => selectMode ? toggleDay(ds) : openDayModal(ds);
+
+function paintDay(el, on) {
+  if (!el) return;
+  const ds = el.dataset.date;
+  if (on) selected.add(ds); else selected.delete(ds);
+  el.classList.toggle('cal-selected', on);
+  renderSelectBar();
+}
+
+function toggleDay(ds) {
+  paintDay(document.querySelector(`.cal-day[data-date="${ds}"]`), !selected.has(ds));
+}
+
+function toggleSelectMode() {
+  selectMode = !selectMode;
+  if (!selectMode) selected.clear();
+  document.getElementById('btn-select').classList.toggle('active', selectMode);
+  renderGrid();
+}
+
+// Alle selektierbaren Tage eines Wochentags (JS-getDay-Wert) im aktuellen Monat
+function monthWeekdayDates(jsDay) {
+  const out = [];
+  const workDays = profile.work_days || [1,2,3,4,5];
+  if (!workDays.includes(jsDay)) return out;
+  const dim = new Date(currentYear, currentMonth + 1, 0).getDate();
+  for (let d = 1; d <= dim; d++) {
+    const date = new Date(currentYear, currentMonth, d, 12);
+    if (date.getDay() !== jsDay) continue;
+    const ds = dateKey(date);
+    if (!holidayMap.has(ds)) out.push(ds);
+  }
+  return out;
+}
+
+window.toggleWeekday = jsDay => {
+  const days = monthWeekdayDates(jsDay);
+  const allOn = days.length > 0 && days.every(ds => selected.has(ds));
+  days.forEach(ds => allOn ? selected.delete(ds) : selected.add(ds));
+  renderGrid();
+};
+
+window.selectAllDays = () => {
+  document.querySelectorAll('.cal-day[data-date]').forEach(el => selected.add(el.dataset.date));
+  renderGrid();
+};
+
+window.clearSelection = () => { selected.clear(); renderGrid(); };
+
+function renderSelectBar() {
+  const bar = document.getElementById('select-bar');
+  if (!bar) return;
+  if (!selectMode) { bar.innerHTML = ''; return; }
+
+  const wd = [1,2,3,4,5,6,0].map(jsDay => {
+    const days = monthWeekdayDates(jsDay);
+    const active = days.length && days.every(ds => selected.has(ds));
+    return `<button class="wd-chip${active ? ' active' : ''}" ${days.length ? '' : 'disabled'} onclick="toggleWeekday(${jsDay})">${DAY_NAMES[(jsDay + 6) % 7]}</button>`;
+  }).join('');
+
+  const dis = selected.size ? '' : 'disabled';
+  const types = Object.entries(DAY_TYPES).filter(([k]) => k !== 'HOLIDAY')
+    .map(([k, v]) => `<button class="menu-item" ${dis} onclick="applySelection('${k}')"><span>${v.emoji}</span>${v.label}</button>`).join('');
+
+  bar.innerHTML = `
+    <div class="menu-head">
+      <span class="menu-count">${selected.size} Tag${selected.size === 1 ? '' : 'e'} gewählt</span>
+      <button class="menu-x" onclick="toggleSelectMode()" aria-label="Schließen">✕</button>
+    </div>
+    <div class="menu-section">
+      <span class="menu-label">Wochentag im Monat</span>
+      <div class="wd-chips">${wd}</div>
+      <div class="menu-links">
+        <button onclick="selectAllDays()">Alle Tage</button>
+        <button onclick="clearSelection()" ${dis}>Zurücksetzen</button>
+      </div>
+    </div>
+    <div class="menu-section">
+      <span class="menu-label">Zuweisen</span>
+      <div class="menu-items">${types}</div>
+      <button class="menu-item menu-item-danger" ${dis} onclick="applySelection(null)"><span>🗑</span>Eintrag entfernen</button>
+    </div>`;
+}
+
+window.applySelection = async function(type) {
+  const dates = [...selected];
+  if (!dates.length) return;
+  document.querySelectorAll('#select-bar button').forEach(b => b.disabled = true);
+
+  if (type === null) {
+    const { error } = await supabase.from('attendance').delete()
+      .eq('member_id', profile.id).in('date', dates);
+    if (error) { showToast('❌ Fehler beim Entfernen', 'error'); renderSelectBar(); return; }
+    entries = entries.filter(e => !selected.has(e.date));
+    showToast(`🗑 ${dates.length} Tage entfernt`, 'info');
+  } else {
+    const rows = dates.map(ds => ({ member_id: profile.id, date: ds, type }));
+    const { error } = await supabase.from('attendance').upsert(rows, { onConflict: 'member_id,date' });
+    if (error) { showToast('❌ Fehler beim Speichern', 'error'); renderSelectBar(); return; }
+    rows.forEach(r => {
+      const i = entries.findIndex(e => e.date === r.date);
+      if (i >= 0) entries[i].type = r.type; else entries.push({ date: r.date, type: r.type });
+    });
+    showToast(`✅ ${rows.length} Tage als ${DAY_TYPES[type].emoji} ${DAY_TYPES[type].label} eingetragen`, 'success');
+  }
+
+  selected.clear();
+  selectMode = false;
+  document.getElementById('btn-select').classList.remove('active');
+  renderGrid();
+};
 
 function renderHolidays() {
   const monthPrefix = `${currentYear}-${String(currentMonth+1).padStart(2,'0')}`;
@@ -328,21 +470,29 @@ function openSeriesModal() {
   const monthStart = `${currentYear}-${String(currentMonth+1).padStart(2,'0')}-01`;
   const monthEnd   = `${currentYear}-${String(currentMonth+1).padStart(2,'0')}-${new Date(currentYear,currentMonth+1,0).getDate()}`;
   const selectableTypes = Object.entries(DAY_TYPES).filter(([k]) => k !== 'HOLIDAY');
+  const workDays = profile.work_days || [1,2,3,4,5];
+  const weekdayChips = [1,2,3,4,5,6,0].filter(jsDay => workDays.includes(jsDay))
+    .map(jsDay => `<button class="wd-chip active" data-day="${jsDay}" onclick="toggleSeriesWeekday(this)">${DAY_NAMES[(jsDay + 6) % 7]}</button>`).join('');
 
   document.getElementById('day-modal').innerHTML = `
     <div class="modal-overlay" onclick="if(event.target===this)closeDayModal()">
       <div class="modal slide-up">
         <div class="modal-title">📆 Serie eintragen</div>
-        <div class="modal-date">Zeitraum wählen, dann Typ zuweisen — Wochenenden und Feiertage werden automatisch übersprungen</div>
+        <div class="modal-date">Zeitraum und Wochentage wählen, dann Typ zuweisen — Feiertage und nicht gewählte Wochentage werden übersprungen</div>
         <div class="form-group">
           <label class="form-label">Von</label>
-          <input type="date" class="form-input" id="series-from" min="${monthStart}" max="${monthEnd}" value="${monthStart}">
+          <input type="date" class="form-input" id="series-from" min="${monthStart}" max="${monthEnd}" value="${monthStart}" onchange="updateSeriesPreview()">
         </div>
         <div class="form-group">
           <label class="form-label">Bis</label>
-          <input type="date" class="form-input" id="series-to" min="${monthStart}" max="${monthEnd}" value="${monthEnd}">
+          <input type="date" class="form-input" id="series-to" min="${monthStart}" max="${monthEnd}" value="${monthEnd}" onchange="updateSeriesPreview()">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Wochentage</label>
+          <div class="wd-chips" id="series-weekdays">${weekdayChips}</div>
         </div>
         <div id="series-error" class="form-error mb-8"></div>
+        <div class="select-count" id="series-preview" style="margin-bottom:12px"></div>
         <div class="type-grid">
           ${selectableTypes.map(([k,v]) => `
             <button class="type-btn" onclick="applySeries('${k}')">
@@ -352,30 +502,45 @@ function openSeriesModal() {
         <button class="btn btn-ghost" onclick="closeDayModal()" style="width:100%">Abbrechen</button>
       </div>
     </div>`;
+  updateSeriesPreview();
 }
+
+// Datumsliste der Serie aus Zeitraum + aktiven Wochentag-Chips (Feiertage ausgenommen)
+function seriesDates() {
+  const from = document.getElementById('series-from').value;
+  const to   = document.getElementById('series-to').value;
+  if (!from || !to || from > to) return null;
+  const days = [...document.querySelectorAll('#series-weekdays .wd-chip.active')].map(b => +b.dataset.day);
+  const out = [];
+  const cur = new Date(from + 'T12:00:00');
+  const end = new Date(to + 'T12:00:00');
+  while (cur <= end) {
+    const ds = dateKey(cur);
+    if (days.includes(cur.getDay()) && !holidayMap.has(ds)) out.push(ds);
+    cur.setDate(cur.getDate() + 1);
+  }
+  return out;
+}
+
+window.toggleSeriesWeekday = b => { b.classList.toggle('active'); updateSeriesPreview(); };
+
+window.updateSeriesPreview = () => {
+  const d = seriesDates();
+  const el = document.getElementById('series-preview');
+  if (!el) return;
+  el.textContent = d == null
+    ? 'Zeitraum unvollständig'
+    : `${d.length} ${d.length === 1 ? 'Tag wird' : 'Tage werden'} eingetragen`;
+};
 
 window.applySeries = async function(type) {
   const errEl = document.getElementById('series-error');
-  const fromDate = document.getElementById('series-from').value;
-  const toDate = document.getElementById('series-to').value;
   errEl.textContent = '';
 
-  if (!fromDate || !toDate) { errEl.textContent = 'Bitte Von- und Bis-Datum wählen.'; return; }
-  if (fromDate > toDate) { errEl.textContent = 'Das Startdatum muss vor dem Enddatum liegen.'; return; }
-
-  const workDays = profile.work_days || [1,2,3,4,5];
-  const rows = [];
-  const cursor = new Date(fromDate + 'T12:00:00');
-  const end = new Date(toDate + 'T12:00:00');
-  while (cursor <= end) {
-    const ds = dateKey(cursor);
-    if (workDays.includes(cursor.getDay()) && !holidayMap.has(ds)) {
-      rows.push({ member_id: profile.id, date: ds, type });
-    }
-    cursor.setDate(cursor.getDate() + 1);
-  }
-
-  if (rows.length === 0) { errEl.textContent = 'Keine Arbeitstage im gewählten Zeitraum.'; return; }
+  const dates = seriesDates();
+  if (!dates) { errEl.textContent = 'Bitte gültigen Zeitraum wählen (Start vor Ende).'; return; }
+  if (dates.length === 0) { errEl.textContent = 'Keine passenden Tage im Zeitraum.'; return; }
+  const rows = dates.map(ds => ({ member_id: profile.id, date: ds, type }));
 
   document.querySelectorAll('.type-btn').forEach(b => b.disabled = true);
   const { error } = await supabase.from('attendance').upsert(rows, { onConflict: 'member_id,date' });
